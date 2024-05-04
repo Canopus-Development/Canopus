@@ -1,0 +1,18 @@
+<!-- home.html -->
+{% extends "layouts/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ current_user.email }}!</h1>
+{% include '_formhelpers.html' %}
+<form method="POST" action="{{ url_for('main.prompt') }}">
+    {{ form.csrf_token }}
+    <label for="prompt">Prompt:</label><br>
+    <textarea id="prompt" name="prompt" rows="4" cols="50"></textarea><br>
+    <input type="submit" value="Submit">
+</form>
+{% if copied_output %}
+<p>Copied Output: {{ copied_output }}</p>
+{% endif %}
+{% endblock %}

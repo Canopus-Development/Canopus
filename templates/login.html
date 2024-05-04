@@ -1,0 +1,18 @@
+<!-- login.html -->
+{% extends "layouts/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<h1>Login</h1>
+{% include '_formhelpers.html' %}
+<form method="POST" action="{{ url_for('auth.login') }}">
+    {{ form.csrf_token }}
+    <label for="email">Email:</label><br>
+    <input type="text" id="email" name="email"><br>
+    <label for="password">Password:</label><br>
+    <input type="password" id="password" name="password"><br>
+    <input type="submit" value="Login">
+</form>
+<p>Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign Up</a></p>
+{% endblock %}

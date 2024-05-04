@@ -1,0 +1,8 @@
+flask
+flask-login
+flask-wtf
+flask-sqlalchemy
+werkzeug
+flask-migrate
+transformers
+torch
