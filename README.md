@@ -6,7 +6,7 @@ This AI assistant project helps with daily chores, voice authentication, object 
 ## Project Structure
 
 ```sh
-ai_assistant/
+Canopus/
 ├── ai_assistant/
 │ ├── init.py
 │ ├── voice_auth.py
