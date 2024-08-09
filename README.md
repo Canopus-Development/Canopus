@@ -32,7 +32,7 @@ ai_assistant/
 
 1. **Clone the Repository**: Clone the repository from GitHub or download the project files.
    ```sh
-   git clone [repository](https://github.com/Gamecooler19/Canopus-Assistant.git)
+   git clone https://github.com/Gamecooler19/Canopus-Assistant.git
    cd ai_assistant
    ```
 2. **Create and Activate Virtual Environment**:
