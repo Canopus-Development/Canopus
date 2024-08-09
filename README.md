@@ -37,9 +37,15 @@ Canopus/
    ```
 2. **Create and Activate Virtual Environment**:
     ```sh
-    python -m venv .venv
+    python -m venv aienv
     source .venv/bin/activate
     pip install -r requirements.txt
+    ```
+    ```
+    conda create -n aienv python=3.11 anaconda
+    conda activate aienv
+    pip install -r requirements.txt
+    conda install numpy scipy
     ```
 3. **Run the Main Script**:
    ```sh
