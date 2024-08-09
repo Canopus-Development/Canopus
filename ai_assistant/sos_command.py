@@ -6,7 +6,7 @@ from email.mime.image import MIMEImage
 from config.config import SOSConfig, logger
 from ai_assistant.utils import capture_image
 
-def send_sos_email():
+def send_sos_email(image_path):
     logger.info("Sending SOS email.")
     sender_email = SOSConfig.SENDER_EMAIL
     sender_password = SOSConfig.SENDER_PASSWORD

@@ -65,7 +65,12 @@ def main():
             speak_text("I didn't catch that. What did you say?")
             continue
 
-        user_command = command_response["transcription"].strip().lower()
+        transcription = command_response["transcription"]
+        if transcription is None:
+            speak_text("Sorry, I didn't understand that. Please try again.")
+            continue
+
+        user_command = transcription.strip().lower()
         speak_text(f"Recognized command: {user_command}")
 
         if user_command == 'exit':
@@ -110,9 +115,10 @@ def main():
             image_path = capture_image()
             if image_path:
                 send_sos_email(image_path)
+                logger.info("SOS email sent successfully.")
                 speak_text("SOS email sent successfully.")
             else:
-                speak_text("Failed to capture image.")
+                speak_text("Failed to capture image for SOS email.")
         else:
             speak_text("Invalid command. Please try again.")
 
