@@ -1,5 +1,4 @@
 import speech_recognition as sr
-import time
 from ai_assistant.voice_auth import VoiceAuthenticator
 from ai_assistant.object_detection import ObjectDetector
 from ai_assistant.sos_command import send_sos_email
@@ -7,134 +6,115 @@ from ai_assistant.code_generation import generate_code
 from ai_assistant.information_retrieval import retrieve_information
 from ai_assistant.utils import capture_image
 from config.config import logger
-import os
-from mozilla_voice_tts import tts
+import tts
 
+# Initialize TTS
+tts_model = tts.TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=False, gpu=False)
 
+def recognize_speech_from_mic(recognizer, microphone):
+    if not isinstance(recognizer, sr.Recognizer):
+        raise TypeError("`recognizer` must be `Recognizer` instance")
+    if not isinstance(microphone, sr.Microphone):
+        raise TypeError("`microphone` must be `Microphone` instance")
 
-# Initialize TTS engine
-tts_engine = tts.Mozilla_TTS(tts_type='wav')
+    with microphone as source:
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+
+    response = {
+        "success": True,
+        "error": None,
+        "transcription": None
+    }
+
+    try:
+        response["transcription"] = recognizer.recognize_google(audio)
+    except sr.RequestError:
+        response["success"] = False
+        response["error"] = "API unavailable"
+    except sr.UnknownValueError:
+        response["error"] = "Unable to recognize speech"
+
+    return response
+
+def speak_text(text):
+    tts_model.tts_to_file(text=text, file_path="response.wav")
+    os.system("aplay response.wav")
 
 def main():
-    logger.info("Starting AI Voice Assistant.")
-
-    # Voice Authentication
+    logger.info("Starting AI Assistant.")
+    
     voice_authenticator = VoiceAuthenticator()
     voice_authenticator.enroll_user()
     is_authenticated = voice_authenticator.authenticate_user()
     if not is_authenticated:
         logger.error("Voice authentication failed.")
+        speak_text("Voice authentication failed.")
         return
 
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
 
-    wake_word = "Canopus"  # Replace with your desired wake word
+    speak_text("Voice assistant is now active. Please speak your command.")
 
     while True:
-        print("Listening for wake word...")
+        speak_text("Listening for command...")
         command_response = recognize_speech_from_mic(recognizer, microphone)
 
-        if command_response.get("success"):
-            user_command = command_response.get("transcription", "").strip().lower()
-            if wake_word in user_command:
-                tts_engine.tts_to_file(f"I am fine. {wake_word.capitalize()} is now active. Please speak your command.", "response.wav")
-                os.system("play response.wav")
+        if not command_response["success"]:
+            speak_text("I didn't catch that. What did you say?")
+            continue
 
-                while True:
-                    print("Listening for command...")
-                    command_response = recognize_speech_from_mic(recognizer, microphone)
+        user_command = command_response["transcription"].strip().lower()
+        speak_text(f"Recognized command: {user_command}")
 
-                    if command_response.get("success"):
-                        user_command = command_response.get("transcription", "").strip().lower()
-                        print(f"Recognized command: {user_command}")
-                    else:
-                        print("Failed to recognize the command.")
-                        continue
-
-                    if user_command == 'exit':
-                        logger.info("Exiting AI Voice Assistant.")
-                        break
-
-                    # Capture Image
-                    print("Capturing image...")
-                    capture_image()
-                    logger.info("Image captured. timestamp: " + str(time.time()))
-
-                    # Object Detection
-                    if 'detect object' in user_command:
-                        object_detector = ObjectDetector()
-                        object_info = object_detector.detect_objects()
-                        if object_info:
-                            logger.info(f"Object information: {object_info}")
-                            tts_engine.tts_to_file(f"Object information: {object_info}", "response.wav")
-                            os.system("play response.wav")
-                        else:
-                            tts_engine.tts_to_file("No object detected or failed to retrieve information.", "response.wav")
-                            os.system("play response.wav")
-
-                    # Code Generation
-                    elif 'generate code' in user_command:
-                        tts_engine.tts_to_file("Please speak the prompt for code generation:", "response.wav")
-                        os.system("play response.wav")
-                        prompt_response = recognize_speech_from_mic(recognizer, microphone)
-                        prompt = prompt_response.get("transcription", "")
-                        if not prompt:
-                            tts_engine.tts_to_file("Failed to recognize the prompt.", "response.wav")
-                            os.system("play response.wav")
-                            continue
-
-                        generated_code = generate_code(prompt)
-                        if generated_code:
-                            tts_engine.tts_to_file(f"Generated code: {generated_code}", "response.wav")
-                            os.system("play response.wav")
-                        else:
-                            tts_engine.tts_to_file("Failed to generate code.", "response.wav")
-                            os.system("play response.wav")
-                            time.sleep(300)  # Hold back for 5 minutes
-
-                    # Information Retrieval
-                    elif 'retrieve information' in user_command:
-                        tts_engine.tts_to_file("Please speak the topic for information retrieval:", "response.wav")
-                        os.system("play response.wav")
-                        topic_response = recognize_speech_from_mic(recognizer, microphone)
-                        topic = topic_response.get("transcription", "")
-                        if not topic:
-                            tts_engine.tts_to_file("Failed to recognize the topic.", "response.wav")
-                            os.system("play response.wav")
-                            continue
-
-                        information = retrieve_information(topic)
-                        if information:
-                            logger.info(f"Information retrieved: {information}")
-                            tts_engine.tts_to_file(f"Information retrieved: {information}", "response.wav")
-                            os.system("play response.wav")
-                        else:
-                            tts_engine.tts_to_file("Failed to retrieve information.", "response.wav")
-                            os.system("play response.wav")
-
-                    # SOS Command
-                    elif 'sos' in user_command:
-                        send_sos_email()
-                        tts_engine.tts_to_file("SOS email sent.", "response.wav")
-                        os.system("play response.wav")
-
-                    else:
-                        tts_engine.tts_to_file("Invalid command.", "response.wav")
-                        os.system("play response.wav")
-
-                    print("Sleeping...")
-                    time.sleep(5)  # Sleep for 5 seconds before listening for wake word again
-
-def recognize_speech_from_mic(recognizer, microphone):
-    with microphone as source:
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source)
-    try:
-        transcription = recognizer.recognize_google(audio)
-        return {"success": True, "transcription": transcription}
-    except sr.UnknownValueError:
-        return {"success": False}
+        if user_command == 'exit':
+            logger.info("Exiting AI Assistant.")
+            speak_text("Exiting AI Assistant.")
+            break
+        elif 'detect object' in user_command:
+            object_detector = ObjectDetector()
+            object_info = object_detector.detect_objects()
+            if object_info:
+                logger.info(f"Object information: {object_info}")
+                speak_text(f"Object information: {object_info}")
+            else:
+                speak_text("No object detected or failed to retrieve information.")
+        elif 'generate code' in user_command:
+            speak_text("Please speak the prompt for code generation:")
+            prompt_response = recognize_speech_from_mic(recognizer, microphone)
+            prompt = prompt_response["transcription"]
+            if not prompt:
+                speak_text("Failed to recognize the prompt for code generation.")
+                continue
+            code = generate_code(prompt)
+            if code:
+                logger.info(f"Generated code: {code}")
+                speak_text(f"Generated code:\n{code}")
+            else:
+                speak_text("Failed to generate code.")
+        elif 'retrieve information' in user_command:
+            speak_text("Please speak the query for information retrieval:")
+            query_response = recognize_speech_from_mic(recognizer, microphone)
+            query = query_response["transcription"]
+            if not query:
+                speak_text("Failed to recognize the query for information retrieval.")
+                continue
+            info = retrieve_information(query)
+            if info:
+                logger.info(f"Retrieved information: {info}")
+                speak_text(f"Retrieved information:\n{info}")
+            else:
+                speak_text("Failed to retrieve information.")
+        elif 'sos' in user_command:
+            image_path = capture_image()
+            if image_path:
+                send_sos_email(image_path)
+                speak_text("SOS email sent successfully.")
+            else:
+                speak_text("Failed to capture image.")
+        else:
+            speak_text("Invalid command. Please try again.")
 
 if __name__ == "__main__":
     main()
