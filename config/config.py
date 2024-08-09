@@ -11,18 +11,18 @@ class ObjectDetectionConfig:
     GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
 
 class SOSConfig:
-    SENDER_EMAIL = "Gamecooler3009@gmail.com"
-    SENDER_PASSWORD = "pebq jgty qdvd ccpg"
-    RECIPIENT_EMAIL = "pradyumn.tandon@hotmail.com"
+    SENDER_EMAIL = "#Replace with your email"
+    SENDER_PASSWORD = "#Replace with password"
+    RECIPIENT_EMAIL = "#Replace with Email"
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
 
 class CodeGenerationConfig:
-    GENERATE_API_URL = "http://144.24.97.63:8000/generate"
+    GENERATE_API_URL = "Get A API URL"
 
 class InformationRetrievalConfig:
     GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-    GEMINI_API_KEY = "AIzaSyAIlXvxOs1mY7gUuwEgjPamLUhht9qS3Lw"
+    GEMINI_API_KEY = "Get Token"
 
 LOGGING_CONFIG = {
     'version': 1,
