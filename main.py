@@ -6,10 +6,10 @@ from ai_assistant.code_generation import generate_code
 from ai_assistant.information_retrieval import retrieve_information
 from ai_assistant.utils import capture_image
 from config.config import logger
-import tts
+from TTS.api import TTS
 
 # Initialize TTS
-tts_model = tts.TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=False, gpu=False)
+tts_model = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=False, gpu=False)
 
 def recognize_speech_from_mic(recognizer, microphone):
     if not isinstance(recognizer, sr.Recognizer):
@@ -43,7 +43,11 @@ def speak_text(text):
 
 def main():
     logger.info("Starting AI Assistant.")
+<<<<<<< Updated upstream
     
+=======
+
+>>>>>>> Stashed changes
     voice_authenticator = VoiceAuthenticator()
     voice_authenticator.enroll_user()
     is_authenticated = voice_authenticator.authenticate_user()
