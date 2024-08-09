@@ -17,6 +17,3 @@ def retrieve_information(query):
         return response.json().get("content")
     logger.error("Information retrieval failed.")
     return None
-
-query = "What is Horses?"
-print(retrieve_information(query))
