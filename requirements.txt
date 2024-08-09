@@ -1,0 +1,8 @@
+opencv-python
+librosa
+sounddevice
+soundfile
+requests
+numpy
+scipy
+speechrecognition
