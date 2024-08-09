@@ -72,4 +72,4 @@ Retrieves information about objects using Google Gemini API.
 Feel free to contribute by submitting a pull request or opening an issue.
 
 ## License
-- Unlicensed License
+- [Unlicensed License](LICENSE)
