@@ -1,4 +1,5 @@
 import speech_recognition as sr
+import pyttsx3
 from ai_assistant.voice_auth import VoiceAuthenticator
 from ai_assistant.object_detection import ObjectDetector
 from ai_assistant.sos_command import send_sos_email
@@ -6,10 +7,13 @@ from ai_assistant.code_generation import generate_code
 from ai_assistant.information_retrieval import retrieve_information
 from ai_assistant.utils import capture_image
 from config.config import logger
-from TTS.api import TTS
 
-# Initialize TTS
-tts_model = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=False, gpu=False)
+# Initialize the pyttsx3 engine
+engine = pyttsx3.init()
+
+def speak_text(text):
+    engine.say(text)
+    engine.runAndWait()
 
 def recognize_speech_from_mic(recognizer, microphone):
     if not isinstance(recognizer, sr.Recognizer):
@@ -37,17 +41,9 @@ def recognize_speech_from_mic(recognizer, microphone):
 
     return response
 
-def speak_text(text):
-    tts_model.tts_to_file(text=text, file_path="response.wav")
-    os.system("aplay response.wav")
-
 def main():
     logger.info("Starting AI Assistant.")
-<<<<<<< Updated upstream
     
-=======
-
->>>>>>> Stashed changes
     voice_authenticator = VoiceAuthenticator()
     voice_authenticator.enroll_user()
     is_authenticated = voice_authenticator.authenticate_user()

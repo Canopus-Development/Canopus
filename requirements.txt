@@ -6,3 +6,5 @@ requests
 numpy
 scipy
 speechrecognition
+pyaudio
+pyttsx3
