@@ -1,12 +1,13 @@
+import os
+import importlib
 import speech_recognition as sr
 import pyttsx3
-from ai_assistant.voice_auth import VoiceAuthenticator
-from ai_assistant.object_detection import ObjectDetector
-from ai_assistant.sos_command import send_sos_email
-from ai_assistant.code_generation import generate_code
-from ai_assistant.information_retrieval import retrieve_information
-from ai_assistant.utils import capture_image
 from config.config import logger
+import webbrowser
+import subprocess
+
+# Constant
+WAKE_UP_WORD = "canopus"
 
 # Initialize the pyttsx3 engine
 engine = pyttsx3.init()
@@ -32,7 +33,7 @@ def recognize_speech_from_mic(recognizer, microphone):
     }
 
     try:
-        response["transcription"] = recognizer.recognize_google(audio)
+        response["transcription"] = recognizer.recognize_google(audio, language="en-IN")
     except sr.RequestError:
         response["success"] = False
         response["error"] = "API unavailable"
@@ -41,86 +42,117 @@ def recognize_speech_from_mic(recognizer, microphone):
 
     return response
 
+def save_response_to_file(response):
+    with open("responses.txt", "a") as f:
+        f.write(response + "\n")
+
+def open_application_or_website(command):
+    if "open" in command:
+        if "website" in command:
+            url = command.split("open website ")[-1]
+            webbrowser.open(url)
+            return f"Opening website {url}"
+        else:
+            app = command.split("open ")[-1]
+            subprocess.Popen(app)
+            return f"Opening application {app}"
+    return "Invalid command for opening application or website."
+
+def load_plugins():
+    plugins = {}
+    plugin_dir = os.path.join(os.path.dirname(__file__), "plugins")
+
+    for filename in os.listdir(plugin_dir):
+        if filename.endswith(".py") and filename != "__init__.py":
+            plugin_name = filename[:-3]
+            try:
+                module = importlib.import_module(f"ai_assistant.{plugin_name}")
+                if hasattr(module, "execute"):
+                    plugins[plugin_name] = module
+                    logger.info(f"Loaded plugin: {plugin_name}")
+                else:
+                    logger.warning(f"Plugin {plugin_name} does not have an execute method.")
+            except Exception as e:
+                logger.error(f"Failed to load plugin {plugin_name}: {e}")
+
+    return plugins
+
 def main():
     logger.info("Starting AI Assistant.")
-    
-    voice_authenticator = VoiceAuthenticator()
-    voice_authenticator.enroll_user()
-    is_authenticated = voice_authenticator.authenticate_user()
-    if not is_authenticated:
-        logger.error("Voice authentication failed.")
-        speak_text("Voice authentication failed.")
-        return
 
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
 
-    speak_text("Voice assistant is now active. Please speak your command.")
+    # Load plugins dynamically
+    plugins = load_plugins()
+
+    with microphone as source:
+        recognizer.adjust_for_ambient_noise(source)
 
     while True:
-        speak_text("Listening for command...")
+        logger.info("Listening for the wake-up word.")
         command_response = recognize_speech_from_mic(recognizer, microphone)
 
         if not command_response["success"]:
-            speak_text("I didn't catch that. What did you say?")
             continue
 
         transcription = command_response["transcription"]
         if transcription is None:
-            speak_text("Sorry, I didn't understand that. Please try again.")
             continue
 
         user_command = transcription.strip().lower()
-        speak_text(f"Recognized command: {user_command}")
+        if WAKE_UP_WORD not in user_command:
+            continue
 
-        if user_command == 'exit':
-            logger.info("Exiting AI Assistant.")
-            speak_text("Exiting AI Assistant.")
-            break
-        elif 'detect object' in user_command:
-            object_detector = ObjectDetector()
-            object_info = object_detector.detect_objects()
-            if object_info:
-                logger.info(f"Object information: {object_info}")
-                speak_text(f"Object information: {object_info}")
-            else:
-                speak_text("No object detected or failed to retrieve information.")
-        elif 'generate code' in user_command:
-            speak_text("Please speak the prompt for code generation:")
-            prompt_response = recognize_speech_from_mic(recognizer, microphone)
-            prompt = prompt_response["transcription"]
-            if not prompt:
-                speak_text("Failed to recognize the prompt for code generation.")
+        speak_text("Canopus is now active. Please speak your command.")
+        command_executed = False
+
+        while not command_executed:
+            logger.info("Listening for command...")
+            command_response = recognize_speech_from_mic(recognizer, microphone)
+
+            if not command_response["success"]:
+                speak_text("I didn't catch that. What did you say?")
                 continue
-            code = generate_code(prompt)
-            if code:
-                logger.info(f"Generated code: {code}")
-                speak_text(f"Generated code:\n{code}")
-            else:
-                speak_text("Failed to generate code.")
-        elif 'retrieve information' in user_command:
-            speak_text("Please speak the query for information retrieval:")
-            query_response = recognize_speech_from_mic(recognizer, microphone)
-            query = query_response["transcription"]
-            if not query:
-                speak_text("Failed to recognize the query for information retrieval.")
+
+            user_command = command_response["transcription"]
+            if user_command is None:
+                speak_text("Sorry, I didn't understand that. Please try again.")
                 continue
-            info = retrieve_information(query)
-            if info:
-                logger.info(f"Retrieved information: {info}")
-                speak_text(f"Retrieved information:\n{info}")
+
+            user_command = user_command.strip().lower()
+
+            if user_command == 'exit':
+                logger.info("Exiting AI Assistant.")
+                speak_text("Exiting AI Assistant.")
+                command_executed = True
+                break
+
+            elif 'open' in user_command:
+                response = open_application_or_website(user_command)
+                speak_text(response)
+                save_response_to_file(response)
             else:
-                speak_text("Failed to retrieve information.")
-        elif 'sos' in user_command:
-            image_path = capture_image()
-            if image_path:
-                send_sos_email(image_path)
-                logger.info("SOS email sent successfully.")
-                speak_text("SOS email sent successfully.")
-            else:
-                speak_text("Failed to capture image for SOS email.")
-        else:
-            speak_text("Invalid command. Please try again.")
+                plugin_executed = False
+                for plugin_name, plugin in plugins.items():
+                    if hasattr(plugin, "execute"):
+                        try:
+                            response = plugin.execute(user_command)
+                            if response:
+                                speak_text(response)
+                                save_response_to_file(response)
+                                plugin_executed = True
+                                break
+                        except Exception as e:
+                            logger.error(f"Error executing plugin {plugin_name}: {e}")
+
+                if not plugin_executed:
+                    speak_text("Sorry, I didn't understand the command. Please try again or install additional plugins.")
+
+            command_executed = True
+
+        speak_text("Canopus is now going to sleep. Say the wake-up word to activate again.")
+        logger.info("Canopus is now sleeping.")
 
 if __name__ == "__main__":
     main()

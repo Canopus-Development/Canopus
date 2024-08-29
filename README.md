@@ -7,7 +7,7 @@ This AI assistant project helps with daily chores, voice authentication, object 
 
 ```sh
 Canopus/
-├── ai_assistant/
+├── plugins/
 │ ├── init.py
 │ ├── voice_auth.py
 │ ├── object_detection.py
@@ -18,10 +18,8 @@ Canopus/
 ├── config/
 │ └── config.py
 ├── models/
-│ ├── deploy.prototxt
-│ └── mobilenet.caffemodel
 ├── logs/
-│ └── ai_assistant.log
+│ └── plugins.log
 ├── main.py
 ├── requirements.txt
 └── README.md
@@ -33,7 +31,7 @@ Canopus/
 1. **Clone the Repository**: Clone the repository from GitHub or download the project files.
    ```sh
    git clone https://github.com/Gamecooler19/Canopus-Assistant.git
-   cd ai_assistant
+   cd plugins
    ```
 2. **Create and Activate Virtual Environment**:
     ```sh
