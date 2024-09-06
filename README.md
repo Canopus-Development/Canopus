@@ -76,4 +76,4 @@ Retrieves information about objects using Google Gemini API.
 Feel free to contribute by submitting a pull request or opening an issue.
 
 ## License
-- [Canopus Open Source License](LICENSE.md)
+- [Canopus License](LICENSE.md)

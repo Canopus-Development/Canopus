@@ -1,36 +1,56 @@
+### Canopus Code of Conduct
+
+**Preamble:**
+
+The **Canopus** community is dedicated to creating a friendly, inclusive, and professional environment for all contributors. This Code of Conduct outlines the expected behavior for community members to foster collaboration and respect, as well as the consequences for unacceptable actions.
+
 ---
 
-### Code of Conduct
+### 1. Our Standards:
 
-**Contributor Covenant Code of Conduct**
+**Expected Behavior:**
+- Treat all community members with respect and professionalism.
+- Offer constructive feedback and support, especially to new contributors.
+- Encourage and value diverse viewpoints and experiences.
+- Resolve conflicts collaboratively and respectfully.
+- Ensure contributions (code, documentation, discussions) are clear, constructive, and follow community guidelines.
 
-As contributors and maintainers of the **[Project Name]** Voice Assistant, we pledge to create a welcoming, safe, and collaborative environment. This Code of Conduct outlines our expectations for all contributors and participants and how we encourage constructive and respectful behavior within our community.
+**Unacceptable Behavior:**
+- Harassment, discrimination, or offensive comments based on gender, gender identity, ethnicity, sexual orientation, disability, religion, or other personal characteristics.
+- Intimidation, bullying, or aggressive behavior in any form.
+- Spamming, trolling, or posting irrelevant or disruptive content in the project channels.
+- Publishing or sharing private information about others without their consent.
+- Attempts to bypass or abuse the non-commercial clause of the **Canopus License**.
 
-**1. Expected Behavior:**
-- Be respectful to all community members, contributors, and users.
-- Provide constructive and helpful feedback during discussions and code reviews.
-- Respect different viewpoints and experiences and seek common ground in disagreements.
-- Collaborate openly and actively, especially when helping new contributors.
-- Adhere to the highest standard of professionalism when writing code, contributing plugins, or participating in discussions.
+---
 
-**2. Unacceptable Behavior:**
-- Harassment, discrimination, or abusive language of any kind, including offensive comments related to gender, gender identity, age, disability, ethnicity, sexual orientation, race, or religion.
-- Trolling, flaming, or intentionally disruptive behavior in discussions, forums, or comments.
-- Unsolicited commercial messages or promotion of competing projects in the community channels.
-- Publishing or sharing other people’s private information without their explicit consent.
-- Disrespectful behavior toward other participants’ contributions, opinions, or ideas.
+### 2. Reporting and Enforcement:
 
-**3. Reporting Violations:**
-If you witness or are subject to unacceptable behavior, please report the incident by contacting the project maintainers at [insert contact email]. All reports will be handled confidentially.
+- If you experience or witness any form of unacceptable behavior, or suspect that the **Canopus License** has been violated, please report it to the project maintainers at [insert contact email].
+- The project maintainers will review all complaints in a confidential manner and decide the appropriate course of action.
+- For more severe violations, such as ongoing harassment, misuse of the project for commercial purposes, or major conflicts, the issue will be escalated to the **Canopus Project Board**.
 
-**4. Enforcement:**
-- Participants asked to stop unacceptable behavior are expected to comply immediately.
-- Project maintainers reserve the right to remove, edit, or reject contributions that violate this Code of Conduct.
-- Maintainers may ban individuals from the project’s community if behavior persists after warning or if the behavior is deemed egregious.
+---
 
-**5. Scope:**
-This Code of Conduct applies within all project spaces, including but not limited to issues, pull requests, forums, or community chats, and any other communications that are part of the project.
+### 3. Enforcement Process:
 
-**6. Acknowledgment:**
-This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.1, available at https://www.contributor-covenant.org/version/2/1/code_of_conduct.html.
+- Upon receiving a report, the **Canopus Project Board** will investigate the incident, gather evidence, and consult with affected parties.
+- If a violation is confirmed, the **Canopus Project Board** may:
+    - Issue warnings to the participant(s).
+    - Temporarily or permanently revoke participation in the project (bans from code contributions, community forums, etc.).
+    - Propose further legal actions if deemed necessary, especially for cases involving illegal activity or commercial misuse.
+
+---
+
+### 4. Legal Recourse:
+
+- In cases where violations of the **Canopus License** (e.g., unauthorized commercial use) or serious breaches of this **Code of Conduct** cannot be resolved within the community, the **Canopus Project Board** reserves the right to pursue legal recourse through appropriate legal channels.
+- Legal action will be initiated through local or national judicial systems, depending on the jurisdiction of the case.
+- The **Canopus Project Board** will coordinate with legal professionals to determine the most appropriate course of action.
+
+---
+
+**Acknowledgment:**
+This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), and reflects the specific goals and values of the **Canopus** project. All contributors are expected to adhere to this document when participating in the project.
+
 ---
