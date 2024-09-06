@@ -1,5 +1,3 @@
----
-
 # Canopus: Developer's AI-Powered Voice Assistant
 
 **Canopus** is a powerful, customizable, and AI-driven voice assistant designed specifically for developers. With the ability to be easily extended through plugins, Canopus is your ultimate companion for automating daily tasks, enhancing productivity, and providing high-performance assistance in a developer-friendly command-line interface (CLI). The project includes several pre-installed plugins and allows users to create custom plugins for specialized tasks. Additional plugins can also be downloaded and installed via our official website.
