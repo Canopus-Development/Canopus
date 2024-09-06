@@ -2,9 +2,11 @@ import os
 import importlib
 import speech_recognition as sr
 import pyttsx3
-from config.config import logger
 import webbrowser
 import subprocess
+import threading
+import queue
+from config.config import logger
 
 # Constant
 WAKE_UP_WORD = "canopus"
@@ -12,7 +14,12 @@ WAKE_UP_WORD = "canopus"
 # Initialize the pyttsx3 engine
 engine = pyttsx3.init()
 
+# Queue to manage commands and interrupts
+command_queue = queue.Queue()
+stop_speaking_event = threading.Event()
+
 def speak_text(text):
+    stop_speaking_event.clear()
     engine.say(text)
     engine.runAndWait()
 
@@ -77,82 +84,99 @@ def load_plugins():
 
     return plugins
 
-def main():
-    logger.info("Starting AI Assistant.")
+def listen_for_wake_word(recognizer, microphone):
+    logger.info("Listening for the wake-up word.")
+    while True:
+        command_response = recognize_speech_from_mic(recognizer, microphone)
 
+        if command_response["success"]:
+            transcription = command_response["transcription"]
+            if transcription and WAKE_UP_WORD in transcription.lower():
+                logger.info("Wake-up word detected.")
+                command_queue.put("wake_up")
+                stop_speaking_event.set()
+                break
+
+def process_commands():
+    logger.info("Processing commands.")
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
-
-    # Load plugins dynamically
-    plugins = load_plugins()
 
     with microphone as source:
         recognizer.adjust_for_ambient_noise(source)
 
+    # Load plugins dynamically
+    plugins = load_plugins()
+
     while True:
-        logger.info("Listening for the wake-up word.")
-        command_response = recognize_speech_from_mic(recognizer, microphone)
+        if command_queue.get() == "wake_up":
+            speak_text("Canopus is now active. Please speak your command.")
+            command_executed = False
 
-        if not command_response["success"]:
-            continue
+            while not command_executed:
+                logger.info("Listening for command...")
+                command_response = recognize_speech_from_mic(recognizer, microphone)
 
-        transcription = command_response["transcription"]
-        if transcription is None:
-            continue
+                if stop_speaking_event.is_set():
+                    logger.info("Interrupted by wake word.")
+                    break
 
-        user_command = transcription.strip().lower()
-        if WAKE_UP_WORD not in user_command:
-            continue
+                if not command_response["success"]:
+                    speak_text("I didn't catch that. What did you say?")
+                    continue
 
-        speak_text("Canopus is now active. Please speak your command.")
-        command_executed = False
+                user_command = command_response["transcription"]
+                if user_command is None:
+                    speak_text("Sorry, I didn't understand that. Please try again.")
+                    continue
 
-        while not command_executed:
-            logger.info("Listening for command...")
-            command_response = recognize_speech_from_mic(recognizer, microphone)
+                user_command = user_command.strip().lower()
 
-            if not command_response["success"]:
-                speak_text("I didn't catch that. What did you say?")
-                continue
+                if user_command == 'exit':
+                    logger.info("Exiting AI Assistant.")
+                    speak_text("Exiting AI Assistant.")
+                    command_executed = True
+                    break
 
-            user_command = command_response["transcription"]
-            if user_command is None:
-                speak_text("Sorry, I didn't understand that. Please try again.")
-                continue
+                elif 'open' in user_command:
+                    response = open_application_or_website(user_command)
+                    speak_text(response)
+                    save_response_to_file(response)
+                else:
+                    plugin_executed = False
+                    for plugin_name, plugin in plugins.items():
+                        if hasattr(plugin, "execute"):
+                            try:
+                                response = plugin.execute(user_command)
+                                if response:
+                                    speak_text(response)
+                                    save_response_to_file(response)
+                                    plugin_executed = True
+                                    break
+                            except Exception as e:
+                                logger.error(f"Error executing plugin {plugin_name}: {e}")
 
-            user_command = user_command.strip().lower()
+                    if not plugin_executed:
+                        speak_text("Sorry, I didn't understand the command. Please try again or install additional plugins.")
 
-            if user_command == 'exit':
-                logger.info("Exiting AI Assistant.")
-                speak_text("Exiting AI Assistant.")
                 command_executed = True
-                break
 
-            elif 'open' in user_command:
-                response = open_application_or_website(user_command)
-                speak_text(response)
-                save_response_to_file(response)
-            else:
-                plugin_executed = False
-                for plugin_name, plugin in plugins.items():
-                    if hasattr(plugin, "execute"):
-                        try:
-                            response = plugin.execute(user_command)
-                            if response:
-                                speak_text(response)
-                                save_response_to_file(response)
-                                plugin_executed = True
-                                break
-                        except Exception as e:
-                            logger.error(f"Error executing plugin {plugin_name}: {e}")
+            speak_text("Canopus is now going to sleep. Say the wake-up word to activate again.")
+            logger.info("Canopus is now sleeping.")
 
-                if not plugin_executed:
-                    speak_text("Sorry, I didn't understand the command. Please try again or install additional plugins.")
+def main():
+    logger.info("Starting AI Assistant.")
 
-            command_executed = True
+    # Start a thread to listen for the wake word continuously
+    recognizer = sr.Recognizer()
+    microphone = sr.Microphone()
 
-        speak_text("Canopus is now going to sleep. Say the wake-up word to activate again.")
-        logger.info("Canopus is now sleeping.")
+    wake_word_thread = threading.Thread(target=listen_for_wake_word, args=(recognizer, microphone))
+    wake_word_thread.daemon = True
+    wake_word_thread.start()
+
+    # Start the command processing loop
+    process_commands()
 
 if __name__ == "__main__":
     main()

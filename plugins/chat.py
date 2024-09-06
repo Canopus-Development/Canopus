@@ -1,20 +1,19 @@
 import requests
-from config.config import ChatGenerationConfig, logger, APIConfig
+from config.config import ChatGenerationConfig, logger
 
+def execute(user_command):
+    logger.info("Executing chatter plugin.")
+    try:
+        headers = {"Content-Type": "application/json"}
+        payload = {"message": user_command, "model": "vicuna:7b-q4_0"}
+        response = requests.post(ChatGenerationConfig.CHAT_API_URL, headers=headers, json=payload)
 
-def Chater(prompt):
-    logger.info("Chatter is on")
-    headers = {"Content-Type": "application/json", "X-API-Key": APIConfig.API_KEY}
-    payload = {"message": prompt, "model": "llama2"}
-    response = requests.post(ChatGenerationConfig.CHAT_API_URL, headers=headers, json=payload)
-
-    if response.status_code == 200:
-        logger.info("Chatted successfully")
-        data = response.json()
-        generated_code = data.get("response")
-        generation_time = data.get("generation_time")
-        source = data.get("source")
-        return generated_code
-    else:
-        logger.error(f"Failed to chat. Status code: {response.status_code}")
-        return None
+        if response.status_code == 200:
+            data = response.json()
+            generated_code = data.get("response")
+            return generated_code
+        else:
+            return f"Failed to chat. Status code: {response.status_code}"
+    except Exception as e:
+        logger.error(f"Error in chatter plugin: {str(e)}")
+        return "An error occurred while generating the chat response."

@@ -1,40 +1,27 @@
 import requests
 from plugins.utils import capture_image
-from config.config import ObjectDetectionConfig, logger, APIConfig
+from config.config import ObjectDetectionConfig, logger
 
-def ObjectDetector(prompt):
-    logger.info("Detector Is on")
-
-    # Capture the image
-    image_path = capture_image()  # Assuming capture_image() returns the file path
-
-    # Prepare the payload for multipart/form-data
-    files = {"file": open(image_path, "rb")}
-    payload = {"key": APIConfig.API_KEY}
-
+def execute(user_command):
+    logger.info("Executing object detector plugin.")
     try:
-        # Make the POST request
+        image_path = capture_image()
+
+        files = {"file": open(image_path, "rb")}
         response = requests.post(
             ObjectDetectionConfig.OBJECT_API_URL,
-            headers={"Content-Type": "multipart/form-data", "X-API-Key": APIConfig.API_KEY},
-            files=files,
-            data=payload
+            headers={"Content-Type": "multipart/form-data"},
+            files=files
         )
 
-        # Check the response status
         if response.status_code == 200:
-            logger.info("Object Detected Successfully")
             data = response.json()
-            generated_code = data.get("response")
-            generation_time = data.get("generation_time")
-            source = data.get("source")
-            return generated_code
+            return data.get("response")
         else:
-            logger.error(f"Failed to Detect Object. Status Code: {response.status_code}")
-            return None
+            return f"Failed to detect object. Status code: {response.status_code}"
     except Exception as e:
-        logger.error(f"An error occurred: {str(e)}")
-        return None
+        logger.error(f"Error in object detector plugin: {str(e)}")
+        return "An error occurred while detecting objects."
     finally:
-        files["file"].close()
-
+        if files and files["file"]:
+            files["file"].close()

@@ -6,9 +6,8 @@ class VoiceAuthConfig:
     THRESHOLD = 39
 
 class ObjectDetectionConfig:
-    PROTOTXT_PATH = "models/deploy.prototxt"
-    MODEL_PATH = "models/mobilenet.caffemodel"
-    GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+    DETECT_API_URL = "Get A API URL"
+
 
 class SOSConfig:
     SENDER_EMAIL = "#Replace with your email"
@@ -20,9 +19,16 @@ class SOSConfig:
 class CodeGenerationConfig:
     GENERATE_API_URL = "Get A API URL"
 
-class InformationRetrievalConfig:
-    GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-    GEMINI_API_KEY = "Get Token"
+class InformationGeneratorConfig:
+    INFO_API_URL = "Get A UPI URL"
+
+class SpotifyConfig:
+    CLIENT_ID = "your_spotify_client_id"
+    CLIENT_SECRET = "your_spotify_client_secret"
+    REDIRECT_URI = "http://localhost:8888/callback"  # or your chosen redirect URI
+
+class ChatGenerationConfig:
+    CHAT_API_URL = "Get A API URL"
 
 LOGGING_CONFIG = {
     'version': 1,
