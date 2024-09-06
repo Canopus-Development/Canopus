@@ -6,7 +6,7 @@ class VoiceAuthConfig:
     THRESHOLD = 39
 
 class ObjectDetectionConfig:
-    DETECT_API_URL = "Get A API URL"
+    DETECT_API_URL = "Get A API URL Or See AI API Folder"
 
 
 class SOSConfig:
@@ -17,10 +17,10 @@ class SOSConfig:
     SMTP_PORT = 587
 
 class CodeGenerationConfig:
-    GENERATE_API_URL = "Get A API URL"
+    GENERATE_API_URL = "Get A API URL Or See AI API Folder"
 
 class InformationGeneratorConfig:
-    INFO_API_URL = "Get A UPI URL"
+    INFO_API_URL = "Get A UPI URL Or See AI API Folder"
 
 class SpotifyConfig:
     CLIENT_ID = "your_spotify_client_id"
@@ -28,7 +28,7 @@ class SpotifyConfig:
     REDIRECT_URI = "http://localhost:8888/callback"  # or your chosen redirect URI
 
 class ChatGenerationConfig:
-    CHAT_API_URL = "Get A API URL"
+    CHAT_API_URL = "Get A API URL Or See AI API Folder"
 
 LOGGING_CONFIG = {
     'version': 1,
