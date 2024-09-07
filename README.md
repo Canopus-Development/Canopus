@@ -98,7 +98,7 @@ The following plugins are included with Canopus out-of-the-box:
 
 ### Additional Plugins
 
-More plugins can be added through our official [plugin repository](https://canopus-plugins.com). Users can browse, download, and install plugins to extend Canopus' functionality based on their specific needs.
+More plugins can be added through our official [plugin repository](https://github.com/Canopus-Development/Canopus-Plugins). Users can browse, download, and install plugins to extend Canopus' functionality based on their specific needs.
 
 ### Creating a Custom Plugin
 
