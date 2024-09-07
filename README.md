@@ -45,7 +45,7 @@ To install and run Canopus on your machine:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Canopus.git
+   git clone https://github.com/Canopus-Development/Canopus.git
    cd Canopus
    ```
 
