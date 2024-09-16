@@ -75,7 +75,7 @@ Once installed, you can interact with Canopus using voice commands via the termi
 
 You can trigger these by specifying the appropriate commands through the Canopus CLI interface.
 
-For additional functionality, you can install more plugins directly from our [website](https://canopusdev.codes).
+For additional functionality, you can install more plugins directly from our [website](https://canopus.software).
 
 ---
 
