@@ -252,7 +252,7 @@ GOOGLE_CSE_ID=YOUR_GOOGLE_CSE_ID
    ```
    ollama pull codellama:7b-instruct-q4_0
    ollama pull llama2
-    ollama pull vicuna:7b-q4_0
+   ollama pull vicuna:7b-q4_0
    ```
 3. Keep Python packages updated:
    ```
