@@ -220,12 +220,12 @@ GOOGLE_CSE_ID=YOUR_GOOGLE_CSE_ID
 
 1. For single generation:
    ```
-   curl -X POST "http://localhost:8000/generate" -H "Content-Type: application/json" -d '{"prompt": "Write a Python function to sort a list", "model": "codellama:7b-instruct-q4_0"}'
+   curl -X POST "http://localhost:7297/generate" -H "Content-Type: application/json" -d '{"prompt": "Write a Python function to sort a list", "model": "codellama:7b-instruct-q4_0"}'
    ```
 
 2. For batch generation:
    ```
-   curl -X POST "http://localhost:8000/batch_generate" -H "Content-Type: application/json" -d '[{"prompt": "What is AI?", "model": "llama2:7b-q4_0"}, {"prompt": "Explain quantum computing", "model": "llama2}]'
+   curl -X POST "http://localhost:7297/batch_generate" -H "Content-Type: application/json" -d '[{"prompt": "What is AI?", "model": "llama2:7b-q4_0"}, {"prompt": "Explain quantum computing", "model": "llama2}]'
    ```
 
 ## Performance Optimization Tips
