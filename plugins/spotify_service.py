@@ -1,3 +1,4 @@
+# plugins/spotify.py
 import threading
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -133,24 +134,10 @@ class SpotifyService:
         elif "previous" in command:
             return self.skip_previous()
 
-        return None
+        return None  # Return None if the command is not handled
 
+# Initialize the Spotify service once
+spotify_service_instance = SpotifyService()
 
-def create_spotify_service():
-    spotify_service = SpotifyService()
-
-    def start_service():
-        spotify_service.authenticate_spotify()
-        logger.info("Spotify service started.")
-
-    # Run Spotify service in a separate thread
-    service_thread = threading.Thread(target=start_service)
-    service_thread.start()
-
-    return spotify_service
-
-# To be called by the AI assistant for loading the plugin
 def execute(command):
-    spotify_service = create_spotify_service()
-    response = spotify_service.execute(command)
-    return response
+    return spotify_service_instance.execute(command)

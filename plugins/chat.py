@@ -1,3 +1,4 @@
+# plugins/chatter.py
 import requests
 from config.config import ChatGenerationConfig, logger
 
