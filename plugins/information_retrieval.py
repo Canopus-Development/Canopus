@@ -2,40 +2,34 @@
 import threading
 import requests
 from config.config import InformationGeneratorConfig, logger
+from azure.core.credentials import AzureKeyCredential
+from azure.search.documents import SearchClient
+from config.config import AIConfig, logger
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import UserMessage
 
-class InformationRetrievalService:
+class InformationRetriever:
     def __init__(self):
-        self.api_url = InformationGeneratorConfig.INFO_API_URL
+        self.client = ChatCompletionsClient(
+            endpoint=AIConfig.ENDPOINT,
+            credential=AzureKeyCredential(AIConfig.API_KEY)
+        )
 
-    def retrieve_information(self, user_command):
-        logger.info("Sending request for information retrieval.")
+    def retrieve_information(self, query):
         try:
-            headers = {"Content-Type": "application/json"}
-            payload = {"message": user_command, "model": "llama2"}
-            response = requests.post(self.api_url, headers=headers, json=payload)
-
-            if response.status_code == 200:
-                data = response.json()
-                logger.info("Information retrieval successful.")
-                return data.get("response", "No response from server.")
-            else:
-                logger.error(f"Failed to retrieve information. Status code: {response.status_code}")
-                return f"Failed to retrieve information. Status code: {response.status_code}"
+            response = self.client.complete(
+                messages=[
+                    UserMessage(content=query)
+                ],
+                temperature=AIConfig.TEMPERATURE,
+                top_p=AIConfig.TOP_P,
+                max_tokens=AIConfig.MAX_TOKENS,
+                model=AIConfig.MODELS["o1-mini"]
+            )
+            return response.choices[0].message.content
         except Exception as e:
-            logger.error(f"Error in information retrieval: {str(e)}")
-            return "An error occurred while retrieving information."
+            logger.error(f"Azure AI inference error: {e}")
+            return "Sorry, I couldn't retrieve that information."
 
-    def execute(self, command):
-        # Check if the command contains the phrase "retrieve information"
-        if "retrieve information" in command.lower():
-            logger.info("Executing information retrieval based on command.")
-            return self.retrieve_information(command)
-        else:
-            logger.info("No 'retrieve information' command detected.")
-            return None  # Return None if not handling the command
-
-# Initialize the Information Retrieval service once
-information_retrieval_service = InformationRetrievalService()
-
-def execute(command):
-    return information_retrieval_service.execute(command)
+info_retriever = InformationRetriever()
+def execute(command): return info_retriever.retrieve_information(command)

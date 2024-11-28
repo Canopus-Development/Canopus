@@ -1,51 +1,44 @@
 # plugins/object_detection.py
 import threading
 import requests
+import os
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import (
+    SystemMessage, UserMessage, TextContentItem,
+    ImageContentItem, ImageUrl, ImageDetailLevel
+)
+from azure.core.credentials import AzureKeyCredential
+from config.config import AIModelsConfig, logger
 from plugins.utils import capture_image
-from config.config import ObjectDetectionConfig, logger
 
-class ObjectDetectionService:
+class ObjectDetector:
     def __init__(self):
-        self.api_url = ObjectDetectionConfig.OBJECT_API_URL
+        self.client = ChatCompletionsClient(
+            endpoint=AIModelsConfig.AZURE_ENDPOINT,
+            credential=AzureKeyCredential(AIModelsConfig.AZURE_API_KEY)
+        )
 
-    def detect_objects(self):
-        logger.info("Capturing image for object detection.")
-        try:
-            # Capture image using a utility function
+    def detect_objects(self, image_path=None):
+        if not image_path:
             image_path = capture_image()
 
-            # Open the image file and send it as part of a POST request
-            with open(image_path, "rb") as image_file:
-                files = {"file": image_file}
-                response = requests.post(
-                    self.api_url,
-                    headers={"Content-Type": "multipart/form-data"},
-                    files=files
-                )
+        response = self.client.complete(
+            messages=[
+                SystemMessage(content="You are a helpful assistant that describes images in details."),
+                UserMessage(content=[
+                    TextContentItem(text="What's in this image?"),
+                    ImageContentItem(
+                        image_url=ImageUrl.load(
+                            image_file=image_path,
+                            image_format="jpg",
+                            detail=ImageDetailLevel.LOW
+                        )
+                    )
+                ])
+            ],
+            model=AIModelsConfig.MODELS["llama"]
+        )
+        return response.choices[0].message.content
 
-                # Process the response
-                if response.status_code == 200:
-                    data = response.json()
-                    logger.info("Object detection successful.")
-                    return data.get("response", "No response from server.")
-                else:
-                    logger.error(f"Failed to detect objects. Status code: {response.status_code}")
-                    return f"Failed to detect objects. Status code: {response.status_code}"
-        except Exception as e:
-            logger.error(f"Error during object detection: {e}")
-            return "An error occurred during object detection."
-
-    def execute(self, command):
-        # Check if the command contains the phrase "detect object"
-        if "detect object" in command.lower():
-            logger.info("Executing object detection based on command.")
-            return self.detect_objects()
-        else:
-            logger.info("No 'detect object' command detected.")
-            return None  # Return None if not handling the command
-
-# Initialize the Object Detection service once
-object_detection_service = ObjectDetectionService()
-
-def execute(command):
-    return object_detection_service.execute(command)
+object_detector = ObjectDetector()
+def execute(command): return object_detector.detect_objects()
