@@ -11,6 +11,11 @@ import importlib
 import pyttsx3
 from dataclasses import dataclass
 from config.config import logger, AssistantConfig, Paths, VoiceConfig
+import hashlib
+import time
+from cryptography.fernet import Fernet
+from typing import Dict, Optional
+from datetime import datetime, timedelta
 
 @dataclass
 class CommandResult:
@@ -19,12 +24,46 @@ class CommandResult:
     plugin_name: Optional[str] = None
     error: Optional[Exception] = None
 
+class RateLimiter:
+    def __init__(self, max_commands: int, time_window: int):
+        self.max_commands = max_commands
+        self.time_window = time_window
+        self.commands = []
+
+    def can_execute(self) -> bool:
+        now = datetime.now()
+        self.commands = [t for t in self.commands 
+                        if now - t < timedelta(seconds=self.time_window)]
+        if len(self.commands) < self.max_commands:
+            self.commands.append(now)
+            return True
+        return False
+
+class SecurityManager:
+    def __init__(self):
+        self.cipher_suite = Fernet(SecurityConfig.ENCRYPTION_KEY.encode())
+        self.rate_limiter = RateLimiter(
+            SecurityConfig.MAX_COMMANDS_PER_MINUTE, 60
+        )
+
+    def encrypt_data(self, data: str) -> bytes:
+        return self.cipher_suite.encrypt(data.encode())
+
+    def decrypt_data(self, data: bytes) -> str:
+        return self.cipher_suite.decrypt(data).decode()
+
 class CommandProcessor:
     def __init__(self):
         self.command_queue = queue.Queue()
         self.plugins = self.load_plugins()
         self.running = True
         self.health_check_interval = 60  # seconds
+        self.command_history = []
+        self.max_history = 100
+        self.plugin_stats = {}
+        self.security_manager = SecurityManager()
+        self.last_command = None
+        self.command_confirmed = False
 
     def load_plugins(self) -> dict:
         plugins = {}
@@ -41,32 +80,64 @@ class CommandProcessor:
                     logger.error(f"Failed to load plugin {filename}: {e}")
         return plugins
 
+    def requires_confirmation(self, command: str) -> bool:
+        return any(cmd in command.lower() 
+                  for cmd in SecurityConfig.SENSITIVE_COMMANDS)
+
     def process_command(self, command: str) -> CommandResult:
         try:
-            # Priority plugins (e.g., SOS)
-            priority_plugins = ["sos_command"]
-            for plugin_name in priority_plugins:
-                if plugin_name in self.plugins:
-                    try:
-                        response = self.plugins[plugin_name].execute(command)
-                        if response:
-                            return CommandResult(True, response, plugin_name)
-                    except Exception as e:
-                        logger.error(f"Error in priority plugin {plugin_name}: {e}")
+            if not self.security_manager.rate_limiter.can_execute():
+                return CommandResult(False, "Rate limit exceeded. Please wait.")
 
-            # Then try other plugins
+            # Add command to history
+            self.command_history.append({
+                'timestamp': datetime.now(),
+                'command': command
+            })
+            if len(self.command_history) > self.max_history:
+                self.command_history.pop(0)
+
+            # Handle command confirmation
+            if self.requires_confirmation(command):
+                if not self.command_confirmed:
+                    self.last_command = command
+                    return CommandResult(True, "Please say 'confirm' to proceed.")
+                self.command_confirmed = False
+
+            # Process command through plugins
             for plugin_name, plugin in self.plugins.items():
-                if plugin_name not in priority_plugins:
-                    try:
-                        response = plugin.execute(command)
-                        if response:
-                            return CommandResult(True, response, plugin_name)
-                    except Exception as e:
-                        logger.error(f"Error in plugin {plugin_name}: {e}")
+                try:
+                    response = plugin.execute(command)
+                    if response:
+                        self._update_stats(plugin_name)
+                        return CommandResult(True, response, plugin_name)
+                except Exception as e:
+                    logger.error(f"Error in plugin {plugin_name}: {e}")
 
             return CommandResult(False, "Command not recognized", None)
         except Exception as e:
             return CommandResult(False, "Error processing command", None, e)
+
+    def _update_stats(self, plugin_name: str):
+        if plugin_name not in self.plugin_stats:
+            self.plugin_stats[plugin_name] = 0
+        self.plugin_stats[plugin_name] += 1
+
+    def confirm_command(self) -> Optional[str]:
+        if self.last_command:
+            cmd = self.last_command
+            self.last_command = None
+            self.command_confirmed = True
+            return cmd
+        return None
+
+    def get_stats(self):
+        """Get usage statistics for plugins"""
+        return self.plugin_stats
+
+    def get_command_history(self):
+        """Get command history"""
+        return self.command_history
 
 class SpeechHandler:
     def __init__(self):
@@ -75,6 +146,8 @@ class SpeechHandler:
         self.command_processor = CommandProcessor()
         self.setup_voice_recognition()
         self.running = True
+        self.current_language = LanguageConfig.DEFAULT_LANGUAGE
+        self.custom_wake_words = set(CustomizationConfig.WAKE_WORDS["custom"])
 
     def setup_voice_recognition(self):
         if not os.path.exists(Paths.VOSK_MODEL_PATH):
@@ -103,6 +176,14 @@ class SpeechHandler:
         except Exception as e:
             logger.error(f"Text-to-speech error: {e}")
 
+    def set_language(self, language_code: str):
+        if language_code in LanguageConfig.SUPPORTED_LANGUAGES:
+            self.current_language = language_code
+            self.engine.setProperty(
+                'voice', 
+                LanguageConfig.TTS_VOICES[language_code]
+            )
+
     def listen_for_wake_word(self) -> bool:
         try:
             with self.stream:
@@ -111,7 +192,8 @@ class SpeechHandler:
                     if self.recognizer.AcceptWaveform(data):
                         result = json.loads(self.recognizer.Result())
                         text = result.get("text", "").lower()
-                        if AssistantConfig.WAKE_WORD in text:
+                        if (AssistantConfig.WAKE_WORD in text or 
+                            any(word in text for word in self.custom_wake_words)):
                             return True
             return False
         except queue.Empty:
@@ -156,15 +238,24 @@ class Assistant:
         self.running = True
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
+        self.stats_thread = threading.Thread(target=self._log_stats, daemon=True)
+        self.stats_thread.start()
 
     def signal_handler(self, signum, frame):
         logger.info("Shutdown signal received")
         self.running = False
         self.speech_handler.cleanup()
 
+    def _log_stats(self):
+        """Periodically log plugin usage statistics"""
+        while self.running:
+            stats = self.speech_handler.command_processor.get_stats()
+            logger.info(f"Plugin usage stats: {stats}")
+            time.sleep(3600)  # Log every hour
+
     def run(self):
-        logger.info("AI Assistant started. Waiting for wake word...")
-        self.speech_handler.speak_text("AI Assistant is ready")
+        logger.info("Canopus started. Waiting for wake word...")
+        self.speech_handler.speak_text("Canopus is ready")
 
         try:
             while self.running:
@@ -172,6 +263,15 @@ class Assistant:
                     self.speech_handler.speak_text("How can I help?")
                     
                     command = self.speech_handler.get_command()
+                    
+                    if command == "confirm":
+                        command = self.speech_handler.command_processor.confirm_command()
+                        if not command:
+                            self.speech_handler.speak_text(
+                                "No command to confirm"
+                            )
+                            continue
+
                     if not command:
                         continue
 
