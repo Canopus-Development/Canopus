@@ -8,14 +8,14 @@ from azure.ai.inference.models import (
     ImageContentItem, ImageUrl, ImageDetailLevel
 )
 from azure.core.credentials import AzureKeyCredential
-from config.config import AIModelsConfig, logger
+from config.config import AIConfig, logger
 from plugins.utils import capture_image
 
 class ObjectDetector:
     def __init__(self):
         self.client = ChatCompletionsClient(
-            endpoint=AIModelsConfig.AZURE_ENDPOINT,
-            credential=AzureKeyCredential(AIModelsConfig.AZURE_API_KEY)
+            endpoint=AIConfig.ENDPOINT,
+            credential=AzureKeyCredential(AIConfig.API_KEY)
         )
 
     def detect_objects(self, image_path=None):
@@ -36,7 +36,7 @@ class ObjectDetector:
                     )
                 ])
             ],
-            model=AIModelsConfig.MODELS["llama"]
+            model=AIConfig.MODELS["llama"]
         )
         return response.choices[0].message.content
 

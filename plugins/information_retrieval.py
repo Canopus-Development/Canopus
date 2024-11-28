@@ -1,7 +1,6 @@
 # plugins/information_retrieval.py
 import threading
 import requests
-from config.config import InformationGeneratorConfig, logger
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from config.config import AIConfig, logger

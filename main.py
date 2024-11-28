@@ -4,13 +4,14 @@ import queue
 import signal
 import threading
 import time
+import numpy as np
 from typing import List, Optional
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
 import importlib
 import pyttsx3
 from dataclasses import dataclass
-from config.config import logger, AssistantConfig, Paths, VoiceConfig
+from config.config import logger, AssistantConfig, Paths, SecurityConfig, LanguageConfig, CustomizationConfig, VoiceConfig
 import hashlib
 import time
 from cryptography.fernet import Fernet
@@ -41,7 +42,8 @@ class RateLimiter:
 
 class SecurityManager:
     def __init__(self):
-        self.cipher_suite = Fernet(SecurityConfig.ENCRYPTION_KEY.encode())
+        # Use the key directly without encoding
+        self.cipher_suite = Fernet(SecurityConfig.ENCRYPTION_KEY)
         self.rate_limiter = RateLimiter(
             SecurityConfig.MAX_COMMANDS_PER_MINUTE, 60
         )
@@ -148,6 +150,8 @@ class SpeechHandler:
         self.running = True
         self.current_language = LanguageConfig.DEFAULT_LANGUAGE
         self.custom_wake_words = set(CustomizationConfig.WAKE_WORDS["custom"])
+        self.wake_word = CustomizationConfig.WAKE_WORDS["default"].lower()
+        self._setup_stream()
 
     def setup_voice_recognition(self):
         if not os.path.exists(Paths.VOSK_MODEL_PATH):
@@ -155,19 +159,25 @@ class SpeechHandler:
         
         self.model = Model(Paths.VOSK_MODEL_PATH)
         self.recognizer = KaldiRecognizer(self.model, VoiceConfig.SAMPLE_RATE)
-        
-        self.stream = sd.RawInputStream(
+
+    def _setup_stream(self):
+        """Initialize audio stream with proper parameters"""
+        self.stream = sd.InputStream(
             samplerate=VoiceConfig.SAMPLE_RATE,
-            blocksize=AssistantConfig.BLOCK_SIZE,
-            dtype="int16",
+            blocksize=VoiceConfig.BLOCK_SIZE,
+            dtype=np.int16,
             channels=VoiceConfig.CHANNELS,
             callback=self._audio_callback
         )
+        self.stream.start()
 
     def _audio_callback(self, indata, frames, time, status):
         if status:
             logger.warning(f"Audio callback status: {status}")
-        self.audio_queue.put(bytes(indata))
+        try:
+            self.audio_queue.put_nowait(bytes(indata))
+        except queue.Full:
+            logger.warning("Audio queue is full, dropping data")
 
     def speak_text(self, text: str):
         try:
@@ -186,17 +196,19 @@ class SpeechHandler:
 
     def listen_for_wake_word(self) -> bool:
         try:
-            with self.stream:
-                while self.running:
-                    data = self.audio_queue.get(timeout=1)
+            while self.running:
+                try:
+                    data = self.audio_queue.get(timeout=0.5)
                     if self.recognizer.AcceptWaveform(data):
                         result = json.loads(self.recognizer.Result())
-                        text = result.get("text", "").lower()
-                        if (AssistantConfig.WAKE_WORD in text or 
-                            any(word in text for word in self.custom_wake_words)):
-                            return True
-            return False
-        except queue.Empty:
+                        text = result.get("text", "").lower().strip()
+                        if text:  # Only log if there's actual text
+                            logger.debug(f"Heard: '{text}'")
+                            if self.wake_word in text:
+                                logger.info(f"Wake word detected: {text}")
+                                return True
+                except queue.Empty:
+                    continue
             return False
         except Exception as e:
             logger.error(f"Error in wake word detection: {e}")
@@ -204,21 +216,23 @@ class SpeechHandler:
 
     def get_command(self) -> Optional[str]:
         try:
-            with self.stream:
-                self.recognizer.Reset()
-                command_text = ""
-                timeout = 0
-                
-                while timeout < AssistantConfig.COMMAND_TIMEOUT and self.running:
-                    data = self.audio_queue.get(timeout=1)
+            self.recognizer.Reset()
+            timeout = 0
+            
+            while timeout < AssistantConfig.COMMAND_TIMEOUT and self.running:
+                try:
+                    data = self.audio_queue.get(timeout=0.5)
                     if self.recognizer.AcceptWaveform(data):
                         result = json.loads(self.recognizer.Result())
-                        command_text = result.get("text", "").lower()
+                        command_text = result.get("text", "").lower().strip()
                         if command_text:
+                            logger.debug(f"Command heard: '{command_text}'")
                             return command_text
+                except queue.Empty:
                     timeout += 1
-                
-                return None
+                    continue
+            
+            return None
         except Exception as e:
             logger.error(f"Error getting command: {e}")
             return None
@@ -226,9 +240,11 @@ class SpeechHandler:
     def cleanup(self):
         self.running = False
         try:
-            self.stream.stop()
-            self.stream.close()
-            self.engine.stop()
+            if hasattr(self, 'stream'):
+                self.stream.stop()
+                self.stream.close()
+            if hasattr(self, 'engine'):
+                self.engine.stop()
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
 

@@ -1,6 +1,6 @@
 # plugins/sos.py
 from plugins.utils import capture_image
-from config.config import SOSConfig, logger
+from config.config import EmailConfig, logger
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -13,9 +13,9 @@ def execute(user_command):
 
     if any(cmd in user_command.lower() for cmd in sos_commands):
         try:
-            sender_email = SOSConfig.SENDER_EMAIL
-            sender_password = SOSConfig.SENDER_PASSWORD
-            recipient_email = SOSConfig.RECIPIENT_EMAIL
+            sender_email = EmailConfig.SENDER_EMAIL
+            sender_password = EmailConfig.SENDER_PASSWORD
+            recipient_email = EmailConfig.RECIPIENT_EMAIL
             subject = "SOS - Urgent Assistance Required! 🚨"
             body = "Dear Pradyumn Tandon,\n\nI hope this email finds you in good health and spirits..."  # Trimmed for brevity
 

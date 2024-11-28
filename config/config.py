@@ -1,12 +1,20 @@
 import os
 import logging
+import base64
 from typing import Dict, List
+from cryptography.fernet import Fernet
+
+class VoiceConfig:
+    SAMPLE_RATE = 16000  # Hz (required by Vosk)
+    CHANNELS = 1  # Mono audio (required by Vosk)
+    BLOCK_SIZE = 4000  # Smaller block size for better responsiveness
+    TIMEOUT = 0.5  # Seconds to wait for audio data
 
 class Paths:
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     MODELS_DIR = os.path.join(BASE_DIR, "models")
     LOGS_DIR = os.path.join(BASE_DIR, "logs")
-    VOSK_MODEL_PATH = os.path.join(MODELS_DIR, "vosk-model-small-en-us")
+    VOSK_MODEL_PATH = os.path.join(MODELS_DIR, "vosk-model-small-en-in-0.4")
 
 class AIConfig:
     ENDPOINT = "https://models.inference.ai.azure.com"
@@ -24,9 +32,9 @@ class AIConfig:
     TOP_P = 1.0
 
 class AssistantConfig:
-    WAKE_WORD = "assistant"
+    WAKE_WORD = "canopus"  # Changed to match CustomizationConfig
     COMMAND_TIMEOUT = 100
-    BLOCK_SIZE = 8000
+    BLOCK_SIZE = VoiceConfig.BLOCK_SIZE
 
 class EmailConfig:
     SMTP_SERVER = "smtp.gmail.com"
@@ -36,9 +44,21 @@ class EmailConfig:
     RECIPIENT_EMAIL = os.getenv("EMAIL_RECIPIENT")
 
 class SecurityConfig:
+    @staticmethod
+    def _generate_fernet_key(key: str = None) -> bytes:
+        if key is None:
+            return Fernet.generate_key()
+        # Convert string key to 32 bytes
+        key_bytes = key.encode()
+        # Pad or truncate to 32 bytes
+        key_bytes = key_bytes.ljust(32)[:32]
+        # Convert to url-safe base64
+        return base64.urlsafe_b64encode(key_bytes)
+
     SENSITIVE_COMMANDS = ["sos", "email", "settings"]
     MAX_COMMANDS_PER_MINUTE = 10
-    ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY", "default-key")
+    # Store the key directly without additional encoding
+    ENCRYPTION_KEY = _generate_fernet_key(os.getenv("ENCRYPTION_KEY", "default-encryption-key-change-me-123"))
     AUTH_REQUIRED = True
     SANDBOX_ENABLED = True
 
@@ -59,7 +79,7 @@ class LanguageConfig:
 
 class CustomizationConfig:
     WAKE_WORDS = {
-        "default": "Canopus",
+        "default": "canopus",  # Changed to lowercase for consistency
         "custom": []  # User can add custom wake words
     }
     COMMAND_ALIASES: Dict[str, str] = {}
