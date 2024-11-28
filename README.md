@@ -1,47 +1,25 @@
-# Canopus: Developer's AI-Powered Voice Assistant
+# Canopus - AI Voice Assistant
 
-**Canopus** is a powerful, customizable, and AI-driven voice assistant designed specifically for developers. With the ability to be easily extended through plugins, Canopus is your ultimate companion for automating daily tasks, enhancing productivity, and providing high-performance assistance in a developer-friendly command-line interface (CLI). The project includes several pre-installed plugins and allows users to create custom plugins for specialized tasks. Additional plugins can also be downloaded and installed via our official website.
-
-## Table of Contents
-
-- [Features](#features)
-- [Getting Started](#getting-started)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Plugins](#plugins)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
-- [Code of Conduct](#code-of-conduct)
-
----
+Canopus is a voice-activated AI assistant that can handle various tasks through voice commands. It uses Azure AI services for natural language processing and various other AI capabilities.
 
 ## Features
 
-- **AI-Powered Assistance**: Canopus integrates AI-driven tools for object detection, code generation, and more.
-- **Extensible via Plugins**: Create and customize your own plugins or add new plugins via our website.
-- **Voice Authentication**: Secure voice-based login to ensure only authorized users can access the assistant.
-- **Information Retrieval**: Instant retrieval of code, documentation, or web information with voice commands.
-- **Task Automation**: Automate common developer chores, such as opening services, running scripts, and managing code repositories.
-- **Spotify Integration**: Control your Spotify music directly from the CLI via voice commands.
-- **SOS Commands**: Emergency command capabilities for sending notifications or executing urgent actions.
+- Voice activation with customizable wake word
+- Object detection and image description
+- Information retrieval
+- Code generation
+- Emergency SOS system
+- Natural conversation capabilities
 
----
+## Prerequisites
 
-## Getting Started
-
-To get started with **Canopus**, ensure you have Python installed on your machine. You can then clone the repository, install the required dependencies, and run the assistant directly from your terminal.
-
-### Prerequisites
-
-- **Python 3.8+**
-- **pip** (Python's package installer)
-
----
+- Python 3.8+
+- Microphone access
+- Camera access (for object detection and SOS)
+- Azure AI account
+- Environment variables setup
 
 ## Installation
-
-To install and run Canopus on your machine:
 
 1. Clone the repository:
    ```bash
