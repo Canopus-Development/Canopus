@@ -1,326 +1,207 @@
 import os
-import json
-import queue
-import signal
-import threading
-import time
-import numpy as np
-from typing import List, Optional
-import sounddevice as sd
-from vosk import Model, KaldiRecognizer
-import importlib
-import pyttsx3
-from dataclasses import dataclass
-from config.config import logger, AssistantConfig, Paths, SecurityConfig, LanguageConfig, CustomizationConfig, VoiceConfig
-import hashlib
-import time
-from cryptography.fernet import Fernet
-from typing import Dict, Optional
-from datetime import datetime, timedelta
+import asyncio
+from input.stt import SpeechToText
+from processing.nlu import NLUProcessor
+from processing.dispatcher import CommandDispatcher
+from output.tts import TextToSpeech
+from utils.logger import setup_logger
+from utils.config_handler import ConfigHandler
+from modules.ai_integration import AIModelManager
+from utils.error_handler import with_error_handling
+from utils.command_history import CommandHistory
+from modules.ide_integration import IDEIntegration
+from modules.code_intelligence import CodeIntelligence
+from modules.workspace_manager import WorkspaceManager
+from modules.task_automation import TaskAutomation
+from modules.project_manager import ProjectManager
+from modules.test_runner import TestRunner
+from modules.code_reviewer import CodeReviewer
+from modules.doc_generator import DocGenerator
+from modules.debug_assistant import DebugAssistant
+from modules.performance_monitor import PerformanceMonitor
+from modules.code_search import CodeSearch
+from modules.dependency_manager import DependencyManager
+from rich.console import Console
+from rich.table import Table
+from datetime import datetime
 
-@dataclass
-class CommandResult:
-    success: bool
-    message: str
-    plugin_name: Optional[str] = None
-    error: Optional[Exception] = None
-
-class RateLimiter:
-    def __init__(self, max_commands: int, time_window: int):
-        self.max_commands = max_commands
-        self.time_window = time_window
-        self.commands = []
-
-    def can_execute(self) -> bool:
-        now = datetime.now()
-        self.commands = [t for t in self.commands 
-                        if now - t < timedelta(seconds=self.time_window)]
-        if len(self.commands) < self.max_commands:
-            self.commands.append(now)
-            return True
-        return False
-
-class SecurityManager:
+class Canopus:
     def __init__(self):
-        # Use the key directly without encoding
-        self.cipher_suite = Fernet(SecurityConfig.ENCRYPTION_KEY)
-        self.rate_limiter = RateLimiter(
-            SecurityConfig.MAX_COMMANDS_PER_MINUTE, 60
-        )
+        self.config = ConfigHandler()
+        self.logger = setup_logger()
+        self.stt = SpeechToText()
+        self.nlu = NLUProcessor()
+        self.dispatcher = CommandDispatcher()
+        self.tts = TextToSpeech()
+        self.ai_manager = AIModelManager(self.config.get('ai', {}).get('azure', {}))
+        self.command_history = CommandHistory()
+        workspace_path = self.config.get('workspace', {}).get('path', os.getcwd())
+        self.workspace_manager = WorkspaceManager(workspace_path)
+        self.ide_integration = IDEIntegration(workspace_path)
+        self.code_intelligence = CodeIntelligence(workspace_path)
+        self.task_automation = TaskAutomation(workspace_path)
+        self.project_manager = ProjectManager(workspace_path)
+        self.test_runner = TestRunner(workspace_path)
+        self.code_reviewer = CodeReviewer()
+        self.doc_generator = DocGenerator(workspace_path)
+        self.debug_assistant = DebugAssistant()
+        self.performance_monitor = PerformanceMonitor()
+        self.code_search = CodeSearch(workspace_path)
+        self.dependency_manager = DependencyManager(workspace_path)
+        self.performance_monitor.start_monitoring()
 
-    def encrypt_data(self, data: str) -> bytes:
-        return self.cipher_suite.encrypt(data.encode())
-
-    def decrypt_data(self, data: bytes) -> str:
-        return self.cipher_suite.decrypt(data).decode()
-
-class CommandProcessor:
-    def __init__(self):
-        self.command_queue = queue.Queue()
-        self.plugins = self.load_plugins()
-        self.running = True
-        self.health_check_interval = 60  # seconds
-        self.command_history = []
-        self.max_history = 100
-        self.plugin_stats = {}
-        self.security_manager = SecurityManager()
-        self.last_command = None
-        self.command_confirmed = False
-
-    def load_plugins(self) -> dict:
-        plugins = {}
-        plugin_dir = os.path.join(os.path.dirname(__file__), "plugins")
-        
-        for filename in os.listdir(plugin_dir):
-            if filename.endswith(".py") and filename != "__init__.py":
-                try:
-                    module = importlib.import_module(f"plugins.{filename[:-3]}")
-                    if hasattr(module, "execute"):
-                        plugins[filename[:-3]] = module
-                        logger.info(f"Loaded plugin: {filename[:-3]}")
-                except Exception as e:
-                    logger.error(f"Failed to load plugin {filename}: {e}")
-        return plugins
-
-    def requires_confirmation(self, command: str) -> bool:
-        return any(cmd in command.lower() 
-                  for cmd in SecurityConfig.SENSITIVE_COMMANDS)
-
-    def process_command(self, command: str) -> CommandResult:
+    @with_error_handling
+    async def start(self):
+        self.logger.info("Starting Canopus Voice Assistant...")
         try:
-            if not self.security_manager.rate_limiter.can_execute():
-                return CommandResult(False, "Rate limit exceeded. Please wait.")
-
-            # Add command to history
-            self.command_history.append({
-                'timestamp': datetime.now(),
-                'command': command
-            })
-            if len(self.command_history) > self.max_history:
-                self.command_history.pop(0)
-
-            # Handle command confirmation
-            if self.requires_confirmation(command):
-                if not self.command_confirmed:
-                    self.last_command = command
-                    return CommandResult(True, "Please say 'confirm' to proceed.")
-                self.command_confirmed = False
-
-            # Process command through plugins
-            for plugin_name, plugin in self.plugins.items():
-                try:
-                    response = plugin.execute(command)
-                    if response:
-                        self._update_stats(plugin_name)
-                        return CommandResult(True, response, plugin_name)
-                except Exception as e:
-                    logger.error(f"Error in plugin {plugin_name}: {e}")
-
-            return CommandResult(False, "Command not recognized", None)
+            self.tts.start()
+            self.stt.start_listening()
+            
+            # Main loop instead of GUI
+            while True:
+                command = await self.process_audio_queue()
+                if command:
+                    response = await self.process_command(command)
+                    self.tts.speak(response)
+                await asyncio.sleep(0.1)
+                
+        except KeyboardInterrupt:
+            await self.cleanup()
         except Exception as e:
-            return CommandResult(False, "Error processing command", None, e)
-
-    def _update_stats(self, plugin_name: str):
-        if plugin_name not in self.plugin_stats:
-            self.plugin_stats[plugin_name] = 0
-        self.plugin_stats[plugin_name] += 1
-
-    def confirm_command(self) -> Optional[str]:
-        if self.last_command:
-            cmd = self.last_command
-            self.last_command = None
-            self.command_confirmed = True
-            return cmd
-        return None
-
-    def get_stats(self):
-        """Get usage statistics for plugins"""
-        return self.plugin_stats
-
-    def get_command_history(self):
-        """Get command history"""
-        return self.command_history
-
-class SpeechHandler:
-    def __init__(self):
-        self.engine = pyttsx3.init()
-        self.audio_queue = queue.Queue()
-        self.command_processor = CommandProcessor()
-        self.setup_voice_recognition()
-        self.running = True
-        self.current_language = LanguageConfig.DEFAULT_LANGUAGE
-        self.custom_wake_words = set(CustomizationConfig.WAKE_WORDS["custom"])
-        self.wake_word = CustomizationConfig.WAKE_WORDS["default"].lower()
-        self._setup_stream()
-
-    def setup_voice_recognition(self):
-        if not os.path.exists(Paths.VOSK_MODEL_PATH):
-            raise RuntimeError(f"Vosk model not found at {Paths.VOSK_MODEL_PATH}")
-        
-        self.model = Model(Paths.VOSK_MODEL_PATH)
-        self.recognizer = KaldiRecognizer(self.model, VoiceConfig.SAMPLE_RATE)
-
-    def _setup_stream(self):
-        """Initialize audio stream with proper parameters"""
-        self.stream = sd.InputStream(
-            samplerate=VoiceConfig.SAMPLE_RATE,
-            blocksize=VoiceConfig.BLOCK_SIZE,
-            dtype=np.int16,
-            channels=VoiceConfig.CHANNELS,
-            callback=self._audio_callback
-        )
-        self.stream.start()
-
-    def _audio_callback(self, indata, frames, time, status):
-        if status:
-            logger.warning(f"Audio callback status: {status}")
+            self.logger.error(f"Error starting Canopus: {e}")
+            await self.cleanup()
+            raise
+            
+    async def handle_command(self, text: str):
         try:
-            self.audio_queue.put_nowait(bytes(indata))
-        except queue.Full:
-            logger.warning("Audio queue is full, dropping data")
-
-    def speak_text(self, text: str):
-        try:
-            self.engine.say(text)
-            self.engine.runAndWait()
+            response = await self.process_command(text)
+            return response
         except Exception as e:
-            logger.error(f"Text-to-speech error: {e}")
+            self.logger.error(f"Error processing command: {str(e)}")
+            return f"Error processing command: {str(e)}"
+            
+    async def process_audio_queue(self):
+        # Process audio queue logic here
+        return self.stt.audio_queue.get() if not self.stt.audio_queue.empty() else None
+        
+    @with_error_handling
+    async def process_command(self, text: str):
+        nlu_result = self.nlu.process(text)
+        
+        # Handle task automation commands
+        if "run task" in text.lower():
+            task_name = nlu_result.get("entities", {}).get("task_name")
+            if task_name:
+                result = await self.task_automation.run_task(task_name)
+                return f"Task {task_name} completed with status: {result['status']}"
+                
+        # Handle project management commands
+        if "project status" in text.lower():
+            summary = self.project_manager.get_project_summary()
+            return f"Project {summary['name']} has {summary['tasks_count']} tasks and {summary['coverage']}% test coverage"
+            
+        # Handle test commands
+        if "run tests" in text.lower():
+            result = await self.test_runner.run_tests()
+            return f"Tests completed with {result['coverage']}% coverage"
+        
+        # Handle IDE-specific commands
+        if "open file" in text.lower():
+            filename = nlu_result.get("entities", {}).get("filename")
+            if filename:
+                file_path = self.workspace_manager.find_file(filename)
+                if file_path:
+                    self.ide_integration.open_file(str(file_path))
+                    return f"Opening {filename}"
+                return f"File {filename} not found"
+                
+        # Handle code intelligence commands
+        if "find references" in text.lower():
+            symbol = nlu_result.get("entities", {}).get("symbol")
+            if symbol:
+                refs = self.code_intelligence.find_references(symbol)
+                return f"Found {len(refs)} references to {symbol}"
+        
+        # Handle code review commands
+        if "review code" in text.lower():
+            file_path = nlu_result.get("entities", {}).get("file_path")
+            if file_path:
+                review = self.code_reviewer.review_file(file_path)
+                return f"Code review completed. Found {len(review['issues'])} issues"
+                
+        # Handle documentation commands
+        if "generate docs" in text.lower():
+            module_path = nlu_result.get("entities", {}).get("module_path")
+            if module_path:
+                docs = self.doc_generator.generate_docs(module_path)
+                return f"Documentation generated for {module_path}"
+        
+        # Handle debugging commands
+        if "debug error" in text.lower():
+            last_exception = nlu_result.get("entities", {}).get("exception")
+            if last_exception:
+                analysis = self.debug_assistant.analyze_exception(last_exception)
+                return f"Error analysis: {analysis['type']} - {analysis['suggestions'][0]}"
+                
+        # Handle performance commands
+        if "system status" in text.lower():
+            metrics = self.performance_monitor.collect_metrics()
+            return f"CPU: {metrics['cpu']['percent']}%, Memory: {metrics['memory']['percent']}%"
+        
+        # Handle code search commands
+        if "search code" in text.lower():
+            query = nlu_result.get("entities", {}).get("query")
+            if query:
+                results = self.code_search.search(query)
+                return f"Found {len(results)} matches. Best match: {results[0].snippet}"
+                
+        # Handle dependency commands
+        if "check dependencies" in text.lower():
+            analysis = self.dependency_manager.analyze_dependencies()
+            outdated = len(analysis['outdated'])
+            security = len(analysis['security_issues'])
+            return f"Found {outdated} outdated packages and {security} security issues"
 
-    def set_language(self, language_code: str):
-        if language_code in LanguageConfig.SUPPORTED_LANGUAGES:
-            self.current_language = language_code
-            self.engine.setProperty(
-                'voice', 
-                LanguageConfig.TTS_VOICES[language_code]
+        response = self.dispatcher.dispatch(nlu_result)
+        self.command_history.add_command(
+            text,
+            response,
+            success=response != "No handler found for intent"
+        )
+        return response
+
+    def display_command_history(self, history):
+        """Display command history in a formatted table"""
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta")
+        
+        table.add_column("Time", style="dim")
+        table.add_column("Command")
+        table.add_column("Response")
+        table.add_column("Status", justify="right")
+        
+        for entry in history:
+            timestamp = datetime.fromisoformat(entry['timestamp']).strftime('%H:%M:%S')
+            status_style = "green" if entry['success'] else "red"
+            status = "✓" if entry['success'] else "✗"
+            
+            table.add_row(
+                timestamp,
+                entry['command'],
+                entry['result'][:50] + "..." if len(entry['result']) > 50 else entry['result'],
+                f"[{status_style}]{status}[/{status_style}]"
             )
-
-    def listen_for_wake_word(self) -> bool:
-        try:
-            while self.running:
-                try:
-                    data = self.audio_queue.get(timeout=0.5)
-                    if self.recognizer.AcceptWaveform(data):
-                        result = json.loads(self.recognizer.Result())
-                        text = result.get("text", "").lower().strip()
-                        if text:  # Only log if there's actual text
-                            logger.debug(f"Heard: '{text}'")
-                            if self.wake_word in text:
-                                logger.info(f"Wake word detected: {text}")
-                                return True
-                except queue.Empty:
-                    continue
-            return False
-        except Exception as e:
-            logger.error(f"Error in wake word detection: {e}")
-            return False
-
-    def get_command(self) -> Optional[str]:
-        try:
-            self.recognizer.Reset()
-            timeout = 0
-            
-            while timeout < AssistantConfig.COMMAND_TIMEOUT and self.running:
-                try:
-                    data = self.audio_queue.get(timeout=0.5)
-                    if self.recognizer.AcceptWaveform(data):
-                        result = json.loads(self.recognizer.Result())
-                        command_text = result.get("text", "").lower().strip()
-                        if command_text:
-                            logger.debug(f"Command heard: '{command_text}'")
-                            return command_text
-                except queue.Empty:
-                    timeout += 1
-                    continue
-            
-            return None
-        except Exception as e:
-            logger.error(f"Error getting command: {e}")
-            return None
-
-    def cleanup(self):
-        self.running = False
-        try:
-            if hasattr(self, 'stream'):
-                self.stream.stop()
-                self.stream.close()
-            if hasattr(self, 'engine'):
-                self.engine.stop()
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
-
-class Assistant:
-    def __init__(self):
-        self.speech_handler = SpeechHandler()
-        self.running = True
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
-        self.stats_thread = threading.Thread(target=self._log_stats, daemon=True)
-        self.stats_thread.start()
-
-    def signal_handler(self, signum, frame):
-        logger.info("Shutdown signal received")
-        self.running = False
-        self.speech_handler.cleanup()
-
-    def _log_stats(self):
-        """Periodically log plugin usage statistics"""
-        while self.running:
-            stats = self.speech_handler.command_processor.get_stats()
-            logger.info(f"Plugin usage stats: {stats}")
-            time.sleep(3600)  # Log every hour
-
-    def run(self):
-        logger.info("Canopus started. Waiting for wake word...")
-        self.speech_handler.speak_text("Canopus is ready")
-
-        try:
-            while self.running:
-                if self.speech_handler.listen_for_wake_word():
-                    self.speech_handler.speak_text("How can I help?")
-                    
-                    command = self.speech_handler.get_command()
-                    
-                    if command == "confirm":
-                        command = self.speech_handler.command_processor.confirm_command()
-                        if not command:
-                            self.speech_handler.speak_text(
-                                "No command to confirm"
-                            )
-                            continue
-
-                    if not command:
-                        continue
-
-                    logger.info(f"Command received: {command}")
-
-                    if command in ["exit", "quit", "shutdown"]:
-                        self.speech_handler.speak_text("Goodbye!")
-                        break
-
-                    result = self.speech_handler.command_processor.process_command(command)
-                    if result.success:
-                        self.speech_handler.speak_text(result.message)
-                    else:
-                        self.speech_handler.speak_text("I didn't understand that command")
-
-        except Exception as e:
-            logger.error(f"Fatal error: {e}")
-        finally:
-            self.cleanup()
-
-    def cleanup(self):
-        logger.info("Cleaning up resources...")
-        self.speech_handler.cleanup()
-        logger.info("Cleanup complete")
-
-def main():
-    try:
-        assistant = Assistant()
-        assistant.run()
-    except Exception as e:
-        logger.error(f"Application failed to start: {e}")
-        return 1
-    return 0
-
+        
+        console.print("\n=== Command History ===")
+        console.print(table)
+        console.print("\n")
+        
+    async def cleanup(self):
+        self.logger.info("Shutting down Canopus...")
+        self.stt.stop_listening()
+        self.tts.stop()
+        self.performance_monitor.stop_monitoring()
+        
 if __name__ == "__main__":
-    exit(main())
+    assistant = Canopus()    
+    asyncio.run(assistant.start())

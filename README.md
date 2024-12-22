@@ -1,151 +1,229 @@
-# Canopus - AI Voice Assistant
+# Canopus - A Professional AI-Driven Voice Assistant for Developers
 
-Canopus is a voice-activated AI assistant that can handle various tasks through voice commands. It uses Azure AI services for natural language processing and various other AI capabilities.
+Canopus is a cutting-edge, voice-powered AI assistant designed to streamline software development and project management processes through intuitive and efficient natural language interfaces.
 
 ## Features
 
-- Voice activation with customizable wake word
-- Object detection and image description
-- Information retrieval
-- Code generation
-- Emergency SOS system
-- Natural conversation capabilities
+### Core Development Capabilities
+- **Intelligent Code Navigation and Semantic Search**  
+  Quickly locate classes, functions, and references using natural language requests.
+- **On-Demand Code Review and Static Analysis**  
+  Receive immediate feedback on code quality, potential errors, and optimization tips.
+- **Automated Documentation**  
+  Generate and maintain comprehensive documentation for classes, functions, and modules.
+- **Debugging Assistance**  
+  Analyze exceptions, suggest potential fixes, and track error histories.
+- **Performance Monitoring**  
+  Continuously monitor critical system metrics (CPU, memory, etc.) for proactive optimization.
+- **Dependency and Security Checks**  
+  Identify outdated libraries and known vulnerabilities to maintain a secure environment.
+- **Project & Task Automation**  
+  Efficiently manage tasks and projects, integrating seamlessly with CI/CD pipelines.
+
+### AI Capabilities
+- **Advanced Speech Recognition**  
+  Leverages noise reduction and Voice Activity Detection to enhance transcription accuracy.
+- **Natural Language Understanding (NLU)**  
+  Interprets user requests and maps them to development-related commands.
+- **Multimodal AI Integration**  
+  Configurable with GPT-4, LLaMA, Cohere, and other models for diverse tasks.
+- **Visual Search & Image Analysis**  
+  Uses image-based recognition (e.g., Azure Computer Vision) to enable visual context search.
+
+### IDE Integration
+- **Supported IDEs**  
+  Seamless integration with VSCode, PyCharm, and Atom for quick file navigation.
+- **In-IDE Code Actions**  
+  Open files, locate symbols, and perform code completion directly from your voice commands.
+- **Built-In Documentation Lookup**  
+  Retrieve relevant documentation snippets and references within your IDE.
+
+### Development Tools
+- **Automated Testing & Coverage**  
+  Instantly run tests and generate coverage reports to maintain code quality.
+- **Git Workflow Management**  
+  Perform version control operations (commit, push, pull) with spoken commands.
+- **Workspace Monitoring & Indexing**  
+  Continuously index your workspace for faster search and insights.
+- **Performance Profiling & Optimization**  
+  Track resource utilization and identify bottlenecks with integrated profiling tools.
 
 ## Prerequisites
 
-- Python 3.8+
-- Microphone access
-- Camera access (for object detection and SOS)
-- Azure AI account
-- Environment variables setup
+- **Python 3.8+**  
+  The application is tested and maintained for Python 3.8 and above.
+- **Azure AI Services Account**  
+  Required for advanced AI features (computer vision, LLM inference, etc.).
+- **Development Environment**  
+  VSCode, PyCharm, or Atom installations recommended but not strictly required.
+- **Microphone**  
+  Essential for voice input functionality.
+- **Git**  
+  Necessary for version control commands and project management.
+
+### Audio Setup
+
+For Linux users, ensure ALSA and PulseAudio are properly configured:
+
+```bash
+# Install required packages
+sudo apt-get install pulseaudio alsa-utils portaudio19-dev
+
+# Configure ALSA
+sudo modprobe snd-aloop
+sudo usermod -aG audio $USER
+
+# Test audio setup
+arecord -l  # List recording devices
+```
+
+Create or edit `/etc/asound.conf`:
+```
+pcm.!default {
+    type pulse
+    fallback "sysdefault"
+    hint {
+        show on
+        description "Default ALSA Output (PulseAudio Sound Server)"
+    }
+}
+
+ctl.!default {
+    type pulse
+    fallback "sysdefault"
+}
+```
 
 ## Installation
 
-1. Clone the repository:
+1. **Clone the Repository**  
    ```bash
    git clone https://github.com/Canopus-Development/Canopus.git
    cd Canopus
    ```
 
-2. Install the dependencies:
+2. **Create and Activate a Virtual Environment**  
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   ```
+
+3. **Install Dependencies and Language Model**  
    ```bash
    pip install -r requirements.txt
+   python -m spacy download en_core_web_sm
    ```
 
-3. Run the main application:
+4. **Configure Environment Variables**  
    ```bash
-   python main.py
+   cp .env.example .env
+   # Update .env with your Azure keys and other configurations
    ```
-
----
-
-## Usage
-
-Once installed, you can interact with Canopus using voice commands via the terminal. The default plugins include capabilities for:
-
-- **Code generation** (`code_generation.py`)
-- **Object detection** (`object_detection.py`)
-- **Chatbot functionalities** (`chat.py`)
-- **Voice authentication** (`voice_auth.py`)
-- **Spotify control** (`spotify_service.py`)
-- **SOS commands** (`sos_command.py`)
-- **Information retrieval** (`information_retrieval.py`)
-
-You can trigger these by specifying the appropriate commands through the Canopus CLI interface.
-
-For additional functionality, you can install more plugins directly from our [website](https://canopus.software).
-
----
-
-## Plugins
-
-Canopus is built to be highly extensible through its plugin system. By adding or modifying plugins, users can customize Canopus to meet their specific needs.
-
-### Pre-installed Plugins
-
-The following plugins are included with Canopus out-of-the-box:
-
-- **voice_auth.py**: Handles secure voice-based authentication.
-- **object_detection.py**: Utilizes AI models to detect objects from input sources.
-- **sos_command.py**: Sends urgent notifications or executes critical commands.
-- **code_generation.py**: Assists with generating code snippets based on user input.
-- **information_retrieval.py**: Retrieves information from web or local repositories.
-- **spotify_service.py**: Integrates with Spotify for music control via voice commands.
-- **chat.py**: Provides a simple chatbot interaction service.
-- **utils.py**: Contains utility functions to support the plugins.
-
-### Additional Plugins
-
-More plugins can be added through our official [plugin repository](https://github.com/Canopus-Development/Canopus-Plugins). Users can browse, download, and install plugins to extend Canopus' functionality based on their specific needs.
-
-### Creating a Custom Plugin
-
-1. Navigate to the `plugins/` directory:
-   ```bash
-   cd plugins
-   ```
-
-2. Create a new plugin, for example `my_custom_plugin.py`, and define your custom logic:
-   ```python
-   def execute_command(args):
-       # Custom logic here
-       print("Executing custom command")
-   ```
-
-3. Register your plugin within the Canopus framework by adding it to the `config/config.py` file.
-
----
 
 ## Project Structure
 
-The following is the structure of the Canopus project directory:
-
 ```
 Canopus/
-├── plugins/                       # Contains all pre-installed and custom plugins
-│   ├── init.py                    # Initialization and registration logic
-│   ├── voice_auth.py              # Plugin for voice authentication
-│   ├── object_detection.py        # Plugin for object detection
-│   ├── sos_command.py             # Plugin for SOS emergency commands
-│   ├── code_generation.py         # Plugin for AI code generation
-│   ├── information_retrieval.py   # Plugin for information retrieval
-│   ├── spotify_service.py         # Plugin to control Spotify services
-│   ├── chat.py                    # Plugin for chatbot functionalities
-│   └── utils.py                   # Utilities and helper functions for plugins
-├── config/
-│   └── config.py                  # Configuration file for plugin registration
-├── models/                        # Pre-trained models and AI components (e.g., object detection models)
-├── main.py                        # Entry point of the application
-├── requirements.txt               # Dependencies and packages required for Canopus
-└── README.md                      # Project documentation
+├── input/                   # Input handling modules
+│   ├── stt.py              # Speech-to-text with noise reduction & VAD
+├── processing/             # Core logic for command processing
+│   ├── nlu.py             # Natural Language Understanding
+│   ├── dispatcher.py      # Command dispatcher with plugin loading
+├── modules/               # Core functionality modules
+│   ├── code_search.py     # Semantic code search
+│   ├── code_reviewer.py   # Automated code analysis
+│   ├── debug_assistant.py # Debugging support and error tracking
+│   ├── doc_generator.py   # Documentation generation for Python modules
+│   └── ...                # Additional modules
+├── plugins/               # Plugin system for extensibility
+├── output/                # Output handling (TTS, logs, etc.)
+├── utils/                 # Utility functions (logging, config, etc.)
+└── config/                # Configuration files and environment settings
 ```
 
----
+## Usage
+
+Launch Canopus from the terminal:
+```bash
+python main.py
+```
+
+### Common Voice Commands
+
+- **Code Navigation**  
+  "Hey Canopus, find references to ‘UserController’."
+- **Code Review**  
+  "Hey Canopus, review file ‘main.py’."
+- **Documentation**  
+  "Hey Canopus, generate docs for the ‘auth’ module."
+- **Debugging**  
+  "Hey Canopus, debug the last error."
+- **System Status**  
+  "Hey Canopus, show system metrics."
+- **Dependencies**  
+  "Hey Canopus, check dependencies."
+
+## Plugin System
+
+Extend Canopus to suit your project needs:
+
+1. **Create a Plugin File** in `plugins/` to implement new functionalities.  
+2. **Implement the BasePlugin Interface** for seamless integration.  
+3. **Register Commands** in your plugin module.  
+4. **Restart Canopus** to load new plugins automatically.
+
+## Configuration
+
+Configure Canopus in `config/settings.json` for:
+
+- **AI Model Selection** (GPT-4, LLaMA, Cohere, etc.)  
+- **IDE & Workspace Path**  
+- **Voice Settings** (input, output, language)  
+- **Plugin Activation**  
+- **Logging Levels & Options**
+
+## Development
+
+### Adding or Modifying Features
+
+1. Choose an existing module or create a new plugin.  
+2. Implement or extend functionalities.  
+3. Add tests in the `tests/` directory to validate features.  
+4. Update this README or project documentation as needed.
+
+### Testing
+
+Run automated tests:
+```bash
+pytest tests/
+```
 
 ## Contributing
 
-We welcome contributions to **Canopus**! If you would like to contribute:
-
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Submit a pull request, detailing the changes you have made.
-
-Please ensure your code adheres to the project’s coding standards and includes appropriate tests.
-
-For more details, please refer to our [Code of Conduct](#code-of-conduct).
-
----
+1. **Fork the Repository** and clone it locally.  
+2. **Create a New Feature Branch**:
+   ```bash
+   git checkout -b feature-name
+   ```
+3. **Commit Your Changes**:
+   ```bash
+   git commit -m "Implement new feature"
+   ```
+4. **Push to Your Fork**:
+   ```bash
+   git push origin feature-name
+   ```
+5. **Open a Pull Request** on the main repository.
 
 ## License
 
-This project is licensed under the **Developer Assistant Open Source License (DAOSL v2.0)**. For more details, please refer to the [LICENSE](LICENSE) file.
+This project is licensed under the Canopus License(DAOSL v2). See [LICENSE](LICENSE) for complete details.
 
----
+## Acknowledgments
 
-## Code of Conduct
-
-All participants in this project are expected to follow our **Code of Conduct**. The goal of this Code of Conduct is to ensure a respectful, inclusive, and productive environment for everyone involved.
-
-Please review the full [Code of Conduct](CODE_OF_CONDUCT.md) to understand our standards and expectations.
+- **OpenAI** for GPT-based models.  
+- **Azure AI Services** for advanced computer vision and LLM services.  
+- **Hugging Face** for the Whisper speech recognition tools.  
+- **Community Contributors** for continuous improvements and feedback.
 
 ---
