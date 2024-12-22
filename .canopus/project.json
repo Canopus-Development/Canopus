@@ -1,0 +1,12 @@
+{
+  "name": "Canopus",
+  "created_at": "2024-12-22T11:59:37.036071",
+  "tasks": [],
+  "dependencies": [],
+  "environment": {},
+  "metrics": {
+    "lines_of_code": 0,
+    "test_coverage": 0,
+    "last_build": null
+  }
+}

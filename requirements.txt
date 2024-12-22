@@ -1,34 +1,37 @@
-# Core dependencies
-numpy>=1.21.0
-scipy>=1.7.0
-
-# Audio processing
-sounddevice
-soundfile
-vosk
+openai-whisper
+spacy
 pyttsx3
-librosa
-
-# Image processing
-opencv-python
-Pillow
-
-# Azure AI
+python-dotenv
+transformers
+torch
+nltk
+PyQt5
 azure-ai-inference
 azure-core
-azure-storage-blob
-
-# OpenAI (for code generation)
-openai
-
-# Email handling
-secure-smtplib
-# Logging and utilities
-python-dotenv
-requests
-typing-extensions
-
-# Development tools (optional)
+azure-identity
+jedi
+watchdog
 pytest
-black
-flake8
+coverage
+pyyaml
+radon
+pylint
+docstring-parser
+mdutils
+memory-profiler
+psutil
+stack_data
+toml
+numpy
+packaging
+webrtcvad
+scipy
+rich
+azure-cognitiveservices-vision-computervision
+duckduckgo_search
+wolframalpha
+Pillow
+pyaudio
+python-dotenv
+whisper
+datetime
