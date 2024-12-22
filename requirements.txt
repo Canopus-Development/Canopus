@@ -34,6 +34,10 @@ Pillow
 pyaudio
 python-dotenv
 whisper
+<<<<<<< HEAD
 datetime
 textual>=0.40.0
 textual-dev
+=======
+datetime
+>>>>>>> origin/main

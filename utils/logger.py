@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+<<<<<<< HEAD
 import warnings
 
 class ALSAFilter(logging.Filter):
@@ -13,10 +14,18 @@ class ALSAFilter(logging.Filter):
         ])
 
 def setup_logger():
+=======
+
+def setup_logger():
+    logger = logging.getLogger('canopus')
+    logger.setLevel(logging.INFO)
+
+>>>>>>> origin/main
     # Create logs directory if it doesn't exist
     if not os.path.exists('logs'):
         os.makedirs('logs')
 
+<<<<<<< HEAD
     # Set up main logger
     logger = logging.getLogger('canopus')
     logger.setLevel(logging.INFO)
@@ -29,6 +38,12 @@ def setup_logger():
     junk_handler = logging.FileHandler('logs/junk.log')
     junk_handler.setLevel(logging.DEBUG)
 
+=======
+    # File handler
+    fh = logging.FileHandler(f'logs/canopus_{datetime.now().strftime("%Y%m%d")}.log')
+    fh.setLevel(logging.INFO)
+
+>>>>>>> origin/main
     # Console handler
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
@@ -37,6 +52,7 @@ def setup_logger():
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
+<<<<<<< HEAD
     junk_handler.setFormatter(formatter)
 
     # Set up filters
@@ -78,5 +94,10 @@ def setup_logger():
     # Redirect warnings to logging
     logging.captureWarnings(True)
     warnings.filterwarnings('always', category=FutureWarning)
+=======
+
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+>>>>>>> origin/main
 
     return logger

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import sys
 import contextlib
@@ -11,6 +12,14 @@ with open(os.devnull, 'w') as devnull:
         import webrtcvad
 from scipy.signal import butter, lfilter
 import queue
+=======
+import numpy as np
+import webrtcvad
+from scipy.signal import butter, lfilter
+import queue
+import whisper
+import pyaudio
+>>>>>>> origin/main
 import threading
 import logging
 import torch
@@ -97,11 +106,16 @@ class SpeechToText:
     def __init__(self, model_size="base"):
         self.logger = logging.getLogger('canopus.stt')
         try:
+<<<<<<< HEAD
             # Redirect ALSA errors during audio initialization
             with open(os.devnull, 'w') as devnull:
                 with contextlib.redirect_stderr(devnull):
                     self.model = whisper.load_model(model_size, device="cpu")
                     torch.set_grad_enabled(False)
+=======
+            self.model = whisper.load_model(model_size, device="cpu")
+            torch.set_grad_enabled(False)
+>>>>>>> origin/main
         except Exception as e:
             self.logger.error(f"Failed to load Whisper model: {e}")
             raise
@@ -117,6 +131,7 @@ class SpeechToText:
 
     def setup_audio(self):
         try:
+<<<<<<< HEAD
             # Redirect ALSA errors during audio initialization
             with open(os.devnull, 'w') as devnull:
                 with contextlib.redirect_stderr(devnull):
@@ -145,6 +160,33 @@ class SpeechToText:
                         )
                         self.chunk = int(self.sample_rate * 0.03)
                         self._is_stream_active = False
+=======
+            self.audio = pyaudio.PyAudio()
+            device_index = self._find_input_device()
+            if device_index is None:
+                raise RuntimeError("No suitable input device found")
+            
+            device_info = self.audio.get_device_info_by_index(device_index)
+            self.logger.info(f"Using audio device: {device_info['name']}")
+            
+            supported_rate = self._get_supported_rate(device_info)
+            if supported_rate != self.sample_rate:
+                self.logger.warning(f"Adjusting sample rate from {self.sample_rate} to {supported_rate}")
+                self.sample_rate = supported_rate
+            
+            with self._stream_lock:
+                self._stream = self.audio.open(
+                    format=pyaudio.paInt16,
+                    channels=1,
+                    rate=self.sample_rate,
+                    input=True,
+                    frames_per_buffer=int(self.sample_rate * 0.03),
+                    input_device_index=device_index,
+                    start=False  # Don't start immediately
+                )
+                self.chunk = int(self.sample_rate * 0.03)
+                self._is_stream_active = False
+>>>>>>> origin/main
             
         except Exception as e:
             self.logger.error(f"Failed to initialize audio: {e}")
