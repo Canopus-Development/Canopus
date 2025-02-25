@@ -51,7 +51,7 @@ If you discover a security vulnerability in **Canopus** or any related plugins, 
   - Steps to reproduce the vulnerability.
   - Any potential impact or risk.
   
-- **Discord Server**: Join our official [Canopus Development Discord Server](http://discord.gg/cYy3ejaUdw) for real-time communication with our team. You can report vulnerabilities directly to the dedicated security channel.
+- **Discord Server**: Join our official [Kanopus Development Discord Server](http://discord.gg/cYy3ejaUdw) for real-time communication with our team. You can report vulnerabilities directly to the dedicated security channel.
 
 ### Response Time
 

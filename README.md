@@ -98,7 +98,7 @@ ctl.!default {
 
 1. **Clone the Repository**  
    ```bash
-   git clone https://github.com/Canopus-Development/Canopus.git
+   git clone https://github.com/Kanopusdev/Canopus.git
    cd Canopus
    ```
 
